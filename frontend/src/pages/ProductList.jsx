@@ -7,7 +7,7 @@ export default function ProductList() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/products").then((res) => {
+    axios.get("https://zaafa-backend.onrender.com/api/products").then((res) => {
       setProducts(res.data);
     });
   }, []);

@@ -18,7 +18,7 @@ export default function Admin() {
     if (image) data.append("image", image);
 
     try {
-      await axios.post("http://localhost:5000/api/products", data, {
+      await axios.post("https://zaafa-backend.onrender.com/api/products", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       alert("✅ Product added!");
