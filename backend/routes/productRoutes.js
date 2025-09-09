@@ -5,8 +5,7 @@ import fs from "fs";
 
 const router = express.Router();
 
-
-// In your product creation route
+// Create product
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { name, price, description, categoryId } = req.body;
@@ -15,6 +14,7 @@ router.post("/", upload.single("image"), async (req, res) => {
     if (req.file) {
       const file = fs.readFileSync(req.file.path);
       imageBase64 = file.toString("base64");
+      fs.unlinkSync(req.file.path); // cleanup temp file
     }
 
     const newProduct = new Product({
@@ -22,7 +22,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       price,
       description,
       image: imageBase64,
-      category: categoryId || null
+      category: categoryId || null,
     });
 
     await newProduct.save();
@@ -32,31 +32,49 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-// Get All Products (populate category)
+// Get all products
 router.get("/", async (req, res) => {
   try {
     const products = await Product.find()
       .sort({ createdAt: -1 })
-      .populate("category"); // Populate category details
+      .populate("category")
+      .lean();
+
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Update Product
+// ✅ Get single product (needed for WhatsApp URL)
+router.get("/:id", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id)
+      .populate("category")
+      .lean();
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update product
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {
     const { name, price, description, categoryId } = req.body;
     let updateData = { name, price, description };
 
-    if (categoryId) {
-      updateData.category = categoryId;
-    }
+    if (categoryId) updateData.category = categoryId;
 
     if (req.file) {
       const file = fs.readFileSync(req.file.path);
       updateData.image = file.toString("base64");
+      fs.unlinkSync(req.file.path); // cleanup
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -74,6 +92,5 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 export default router;
