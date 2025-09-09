@@ -40,12 +40,13 @@ export default function ProductDetailPage() {
     return `data:image/jpeg;base64,${base64String}`;
   };
 
-  const handleBuyOnWhatsApp = (product) => {
-    const productUrl = `${window.location.origin}/product/${product._id}`;
-    const message = `Hello, I want to buy:\n\n*${product.name}*\nPrice: Rs.${product.price}\n\nCheck it here: ${productUrl}`;
-    const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank");
-  };
+const handleBuyOnWhatsApp = (product) => {
+  const productUrl = `${window.location.origin}/product/${product._id}`;
+  const message = `Hello, I want to buy:\n\n*${product.name}*\nPrice: Rs.${product.price}\n\nCheck it here: ${productUrl}`;
+  const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, "_blank");
+};
+
 
   if (loading) {
     return (
