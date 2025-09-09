@@ -6,10 +6,10 @@ import fs from "fs";
 const router = express.Router();
 
 
-// Create Product
+// In your product creation route
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const { name, price, description } = req.body;
+    const { name, price, description, categoryId } = req.body;
     let imageBase64 = null;
 
     if (req.file) {
@@ -21,7 +21,8 @@ router.post("/", upload.single("image"), async (req, res) => {
       name,
       price,
       description,
-      image: imageBase64
+      image: imageBase64,
+      category: categoryId || null
     });
 
     await newProduct.save();
@@ -31,10 +32,12 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-// Get All Products
+// Get All Products (populate category)
 router.get("/", async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const products = await Product.find()
+      .sort({ createdAt: -1 })
+      .populate("category"); // Populate category details
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: err.message });
