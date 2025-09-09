@@ -41,7 +41,7 @@ export default function ProductDetailPage() {
   };
 
 const handleBuyOnWhatsApp = (product) => {
-  const productUrl = `${window.location.origin}/product/${product._id}`;
+  const productUrl = `https://zaafa-backend.onrender.com/share/${product._id}`;
   const message = `Hello, I want to buy:\n\n*${product.name}*\nPrice: Rs.${product.price}\n\nCheck it here: ${productUrl}`;
   const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(message)}`;
   window.open(whatsappUrl, "_blank");

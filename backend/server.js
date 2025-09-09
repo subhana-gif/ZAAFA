@@ -4,8 +4,10 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js"
+import shareRoutes from "./routes/ogtags.js"
 
 dotenv.config();
 const app = express();
@@ -24,6 +26,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
 // Routes
 app.use("/api/products", productRoutes);
 app.use("/api/categories",categoryRoutes)
+app.use("/share", shareRoutes);
 
 // Connect MongoDB & Start Server
 mongoose.connect(process.env.MONGO_URI)
