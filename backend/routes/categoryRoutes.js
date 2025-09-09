@@ -1,14 +1,27 @@
-// routes/category.js
 import express from "express";
 import Category from "../models/category.js";
+import upload from "../middleware/upload.js"; // same multer middleware you used for products
+import fs from "fs";
 
 const router = express.Router();
 
 // Create Category
-router.post("/", async (req, res) => {
+router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { name, description } = req.body;
-    const category = new Category({ name, description });
+    let imageBase64 = null;
+
+    if (req.file) {
+      const file = fs.readFileSync(req.file.path);
+      imageBase64 = file.toString("base64");
+    }
+
+    const category = new Category({
+      name,
+      description,
+      image: imageBase64
+    });
+
     await category.save();
     res.json(category);
   } catch (err) {
@@ -26,13 +39,20 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Update Category
-router.put("/:id", async (req, res) => {
+// Update Category (with optional new image)
+router.put("/:id", upload.single("image"), async (req, res) => {
   try {
     const { name, description } = req.body;
+    let updateData = { name, description };
+
+    if (req.file) {
+      const file = fs.readFileSync(req.file.path);
+      updateData.image = file.toString("base64");
+    }
+
     const category = await Category.findByIdAndUpdate(
       req.params.id,
-      { name, description },
+      updateData,
       { new: true }
     );
     res.json(category);
