@@ -27,11 +27,11 @@ export default function ProductList() {
           key={product._id}
           className="border p-4 rounded-xl shadow-md flex flex-col items-center"
         >
-          <img
-            src={`http://localhost:5000${product.imageUrl}`}
-            alt={product.name}
-            className="w-40 h-40 object-cover rounded-lg"
-          />
+<img
+  src={`data:image/jpeg;base64,${product.image}`}
+  alt={product.name}
+  className="w-40 h-40 object-cover rounded-lg"
+/>
           <h2 className="text-lg font-bold mt-2">{product.name}</h2>
           <p className="text-gray-600">{product.description}</p>
           <p className="text-green-600 font-semibold mt-2">₹{product.price}</p>
