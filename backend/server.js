@@ -18,7 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve images
-app.use("/uploads", express.static(path.join(__process.cwd(), "public/uploads")));
+app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
 
 // Routes
 app.use("/api/products", productRoutes);
