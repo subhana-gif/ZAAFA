@@ -48,7 +48,11 @@ router.get("/", async (req, res) => {
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {
     const { name, price, description, categoryId } = req.body;
-    let updateData = { name, price, description, category: categoryId || null };
+    let updateData = { name, price, description };
+
+    if (categoryId) {
+      updateData.category = categoryId;
+    }
 
     if (req.file) {
       const file = fs.readFileSync(req.file.path);

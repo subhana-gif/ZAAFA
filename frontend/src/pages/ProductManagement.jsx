@@ -55,7 +55,7 @@ export default function ProductManagement() {
     data.append("name", form.name);
     data.append("price", form.price);
     data.append("description", form.description);
-    data.append("category", form.category);
+    if (form.category) data.append("categoryId", form.category);
     if (image) data.append("image", image);
 
     try {
@@ -82,16 +82,17 @@ export default function ProductManagement() {
     }
   };
 
-  const handleEdit = (product) => {
-    setForm({
-      name: product.name,
-      price: product.price.toString(),
-      description: product.description || "",
-      category: product.category?._id || "",
-    });
-    setEditingId(product._id);
-    setShowForm(true);
-  };
+const handleEdit = (product) => {
+  setForm({
+    name: product.name,
+    price: product.price.toString(),
+    description: product.description || "",
+    category: product.category?._id || "", // ✅ works
+  });
+  setEditingId(product._id);
+  setShowForm(true);
+};
+
 
   const handleSoftDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
