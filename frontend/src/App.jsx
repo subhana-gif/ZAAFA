@@ -1,8 +1,11 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import ProductList from './pages/ProductList';
+import HeaderLayout from './pages/Header.jsx';
+import HomePage from './pages/Home.jsx';
+import ProductsPage from './pages/ProductList.jsx';
+import ProductDetailPage from './pages/ProductDetails.jsx';
 import Admin from './pages/Admin';
-import AdminLogin from './pages/AdminLogin.jsx'; // create this page for login form
+import AdminLogin from './pages/AdminLogin.jsx';
 
 export default function App() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
@@ -20,30 +23,27 @@ export default function App() {
   };
 
   return (
-    <Router>
-      <Routes>
-        {/* Shop route */}
-        <Route path="/" element={<ProductList />} />
+    <Routes>
+      {/* Shop routes with HeaderLayout */}
+      <Route path="/" element={<HeaderLayout><HomePage /></HeaderLayout>} />
+      <Route path="/products" element={<HeaderLayout><ProductsPage /></HeaderLayout>} />
+      <Route path="/products/:categoryId" element={<HeaderLayout><ProductsPage /></HeaderLayout>} />
+      <Route path="/product/:id" element={<HeaderLayout><ProductDetailPage /></HeaderLayout>} />
 
-        {/* Admin login */}
-        <Route 
-          path="/admin/login" 
-          element={
-            isAdminAuthenticated ? <Navigate to="/admin" /> : <AdminLogin onLogin={handleLogin} />
-          } 
-        />
+      {/* Admin login */}
+      <Route 
+        path="/admin/login" 
+        element={isAdminAuthenticated ? <Navigate to="/admin" /> : <AdminLogin onLogin={handleLogin} />} 
+      />
 
-        {/* Admin dashboard */}
-        <Route 
-          path="/admin" 
-          element={
-            isAdminAuthenticated ? <Admin onLogout={handleLogout} /> : <Navigate to="/admin/login" />
-          } 
-        />
+      {/* Admin dashboard */}
+      <Route 
+        path="/admin" 
+        element={isAdminAuthenticated ? <Admin onLogout={handleLogout} /> : <Navigate to="/admin/login" />} 
+      />
 
-        {/* Catch all unknown routes */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+      {/* Catch all unknown routes */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }
