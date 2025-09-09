@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ShoppingCart, Menu, X, Star, Heart, Search, User, Phone, Mail, MapPin, ArrowLeft, ArrowRight, MessageCircle } from "lucide-react";
 
-const ownerNumber = "9745370909";
+const ownerNumber = "7736062779";
 const API_BASE_URL = "https://zaafa-backend.onrender.com/api"; // Update with your backend URL
 
 export default function ZaafaStore() {
