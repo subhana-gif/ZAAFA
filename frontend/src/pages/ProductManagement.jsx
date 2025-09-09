@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_BASE_URL = "https://zaafa-backend.onrender.com/api/products";
+const PRODUCT_API = "https://zaafa-backend.onrender.com/api/products";
+const CATEGORY_API = "https://zaafa-backend.onrender.com/api/categories";
 
 export default function ProductManagement() {
   const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({ name: "", price: "", description: "" });
+  const [categories, setCategories] = useState([]);
+  const [form, setForm] = useState({ name: "", price: "", description: "", category: "" });
   const [image, setImage] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,18 +17,29 @@ export default function ProductManagement() {
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
     try {
       setFetchLoading(true);
-      const response = await axios.get(API_BASE_URL);
+      const response = await axios.get(PRODUCT_API);
       setProducts(response.data.products || response.data);
     } catch (err) {
       console.error("Error fetching products:", err);
       alert("❌ Error fetching products");
     } finally {
       setFetchLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(CATEGORY_API);
+      setCategories(res.data);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      alert("❌ Error fetching categories");
     }
   };
 
@@ -42,16 +55,17 @@ export default function ProductManagement() {
     data.append("name", form.name);
     data.append("price", form.price);
     data.append("description", form.description);
+    data.append("category", form.category);
     if (image) data.append("image", image);
 
     try {
       if (editingId) {
-        await axios.put(`${API_BASE_URL}/${editingId}`, data, {
+        await axios.put(`${PRODUCT_API}/${editingId}`, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         alert("✅ Product updated successfully!");
       } else {
-        await axios.post(API_BASE_URL, data, {
+        await axios.post(PRODUCT_API, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         alert("✅ Product added successfully!");
@@ -72,7 +86,8 @@ export default function ProductManagement() {
     setForm({
       name: product.name,
       price: product.price.toString(),
-      description: product.description || ""
+      description: product.description || "",
+      category: product.category?._id || "",
     });
     setEditingId(product._id);
     setShowForm(true);
@@ -81,7 +96,7 @@ export default function ProductManagement() {
   const handleSoftDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await axios.delete(`${API_BASE_URL}/${id}`);
+        await axios.delete(`${PRODUCT_API}/${id}`);
         alert("✅ Product deleted successfully!");
         await fetchProducts();
       } catch (err) {
@@ -93,13 +108,13 @@ export default function ProductManagement() {
   };
 
   const resetForm = () => {
-    setForm({ name: "", price: "", description: "" });
+    setForm({ name: "", price: "", description: "", category: "" });
     setImage(null);
     setEditingId(null);
     setShowForm(false);
   };
 
-  const filteredProducts = products.filter(product => 
+  const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -154,6 +169,27 @@ export default function ProductManagement() {
                   required
                 />
               </div>
+
+              {/* Category Dropdown */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Category *
+                </label>
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  required
+                >
+                  <option value="">-- Select Category --</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -190,7 +226,7 @@ export default function ProductManagement() {
             <div className="flex gap-3 mt-6">
               <button
                 type="submit"
-                disabled={loading || !form.name || !form.price}
+                disabled={loading || !form.name || !form.price || !form.category}
                 className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
               >
                 {loading ? "Saving..." : editingId ? "Update Product" : "Add Product"}
@@ -230,6 +266,7 @@ export default function ProductManagement() {
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-6 py-4 text-left">Product</th>
+              <th className="px-6 py-4 text-left">Category</th>
               <th className="px-6 py-4 text-left">Price</th>
               <th className="px-6 py-4 text-left">Description</th>
               <th className="px-6 py-4 text-left">Created</th>
@@ -240,6 +277,7 @@ export default function ProductManagement() {
             {filteredProducts.map((product) => (
               <tr key={product._id}>
                 <td className="px-6 py-4">{product.name}</td>
+                <td className="px-6 py-4">{product.category?.name || "—"}</td>
                 <td className="px-6 py-4">${product.price.toFixed(2)}</td>
                 <td className="px-6 py-4">{product.description || "—"}</td>
                 <td className="px-6 py-4">

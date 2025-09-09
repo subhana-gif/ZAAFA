@@ -44,4 +44,32 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Update Product
+router.put("/:id", upload.single("image"), async (req, res) => {
+  try {
+    const { name, price, description, categoryId } = req.body;
+    let updateData = { name, price, description, category: categoryId || null };
+
+    if (req.file) {
+      const file = fs.readFileSync(req.file.path);
+      updateData.image = file.toString("base64");
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    ).populate("category");
+
+    if (!updatedProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.json(updatedProduct);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 export default router;
