@@ -23,11 +23,11 @@ app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
 
 // Routes
 app.use("/api/products", productRoutes);
-app.use("/api/categoruy",categoryRoutes)
+app.use("/api/categories",categoryRoutes)
 
 // Connect MongoDB & Start Server
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    app.listen(5000, () => console.log("✅ Server running on http://localhost:5000"));
+    app.listen(5000, () => console.log("✅ Server running"));
   })
   .catch(err => console.log(err));
