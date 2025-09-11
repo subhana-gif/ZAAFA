@@ -6,6 +6,7 @@ import ProductsPage from './pages/ProductList.jsx';
 import ProductDetailPage from './pages/ProductDetails.jsx';
 import Admin from './pages/Admin';
 import AdminLogin from './pages/AdminLogin.jsx';
+import Products from "./pages/Products.jsx"
 
 export default function App() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
@@ -26,10 +27,9 @@ export default function App() {
     <Routes>
       {/* Shop routes with HeaderLayout */}
       <Route path="/" element={<HeaderLayout><HomePage /></HeaderLayout>} />
-      <Route path="/products" element={<HeaderLayout><ProductsPage /></HeaderLayout>} />
+      <Route path="/products" element={<HeaderLayout><Products /></HeaderLayout>} />
       <Route path="/products/:categoryId" element={<HeaderLayout><ProductsPage /></HeaderLayout>} />
       <Route path="/product/:id" element={<HeaderLayout><ProductDetailPage /></HeaderLayout>} />
-
       {/* Admin login */}
       <Route 
         path="/admin/login" 

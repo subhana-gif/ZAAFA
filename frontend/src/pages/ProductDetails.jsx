@@ -3,13 +3,15 @@ import { useLocation, useParams } from "react-router-dom";
 import { MessageCircle, ArrowLeft } from "lucide-react";
 
 const ownerNumber = "7736062779";
-const API_BASE_URL = "https://zaafa-backend.onrender.com/api";
+const API_BASE_URL = "http://localhost:5000/api";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const location = useLocation();
   const [product, setProduct] = useState(location.state?.product || null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(!product);
+  const [loadingRelated, setLoadingRelated] = useState(true);
   const [error, setError] = useState("");
 
   // Fetch product if not passed via state
@@ -34,19 +36,49 @@ export default function ProductDetailPage() {
     }
   };
 
-  // Helper function to convert base64 to data URL
-  const getImageUrl = (base64String) => {
-    if (!base64String) return null;
-    return `data:image/jpeg;base64,${base64String}`;
+  // Fetch related products based on same category
+  useEffect(() => {
+    if (product?.category?._id) {
+      fetchRelatedProducts(product.category._id, product._id);
+    }
+  }, [product]);
+
+  const fetchRelatedProducts = async (categoryId, excludeProductId) => {
+    try {
+      setLoadingRelated(true);
+      const response = await fetch(
+        `${API_BASE_URL}/products?limit=4&category=${categoryId}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch related products");
+      const data = await response.json();
+
+      // Exclude current product
+      const filtered = data.products.filter((p) => p._id !== excludeProductId);
+      setRelatedProducts(filtered);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingRelated(false);
+    }
   };
 
-const handleBuyOnWhatsApp = (product) => {
-  const productUrl = `https://zaafa-backend.onrender.com/share/${product._id}`;
-  const message = `Hello, I want to buy:\n\n*${product.name}*\nPrice: Rs.${product.price}\n\nCheck it here: ${productUrl}`;
-  const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(message)}`;
-  window.open(whatsappUrl, "_blank");
-};
+  const getImageUrl = (base64String) =>
+    base64String ? `data:image/jpeg;base64,${base64String}` : null;
 
+  const handleBuyOnWhatsApp = (product) => {
+    const productUrl = `https://zaafa-backend.onrender.com/share/${product._id}`;
+    const message = `Hello, I want to buy:\n\n*${product.name}*\nPrice: Rs.${product.price}\n\nCheck it here: ${productUrl}`;
+    const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
+  const goToProductDetail = (p) => {
+    window.scrollTo(0, 0);
+    setProduct(p);
+    setRelatedProducts([]);
+  };
 
   if (loading) {
     return (
@@ -56,32 +88,14 @@ const handleBuyOnWhatsApp = (product) => {
     );
   }
 
-  if (error) {
+  if (error || !product) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading Product</h2>
-          <p className="text-gray-600">{error}</p>
-          <button 
-            onClick={() => window.history.back()}
-            className="mt-4 px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">📦</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Product Not Found</h2>
-          <p className="text-gray-600">The product you're looking for doesn't exist.</p>
-          <button 
+          <p className="text-gray-600">{error || "Product not found"}</p>
+          <button
             onClick={() => window.history.back()}
             className="mt-4 px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
           >
@@ -135,7 +149,6 @@ const handleBuyOnWhatsApp = (product) => {
 
               {product.category && (
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Category</h3>
                   <span className="inline-block px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg font-medium">
                     {product.category.name}
                   </span>
@@ -151,7 +164,7 @@ const handleBuyOnWhatsApp = (product) => {
                   <MessageCircle className="h-5 w-5" />
                   Buy Now on WhatsApp
                 </button>
-                
+
                 <button
                   onClick={() => window.history.back()}
                   className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-8 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
@@ -160,19 +173,56 @@ const handleBuyOnWhatsApp = (product) => {
                   Back to Products
                 </button>
               </div>
-
-              {/* Product Info */}
-              <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-                <h4 className="font-semibold text-gray-900 mb-3">Why Choose This Product?</h4>
-                <ul className="text-gray-700 space-y-2">
-                  <li>• Premium quality guaranteed</li>
-                  <li>• Fast and secure delivery</li>
-                  <li>• Customer satisfaction assured</li>
-                  <li>• Easy WhatsApp ordering</li>
-                </ul>
-              </div>
             </div>
           </div>
+
+          {/* Related Products */}
+          {relatedProducts.length > 0 && (
+            <div className="mt-16">
+              <h2 className="text-3xl font-bold text-yellow-600 mb-6">Related Products</h2>
+              {loadingRelated ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-xl p-6 animate-pulse shadow-md">
+                      <div className="w-full h-48 bg-gray-200 rounded-lg mb-4"></div>
+                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {relatedProducts.map((p) => (
+                    <div
+                      key={p._id}
+                      onClick={() => goToProductDetail(p)}
+                      className="group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 shadow-md bg-white hover:shadow-lg"
+                    >
+                      <div className="p-4 text-center">
+                        {p.image ? (
+                          <img
+                            src={getImageUrl(p.image)}
+                            alt={p.name}
+                            className="w-32 h-32 mx-auto mb-4 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-32 h-32 mx-auto mb-4 rounded-lg bg-yellow-200 flex items-center justify-center">
+                            <span className="text-yellow-600 text-2xl font-bold">
+                              {p.name.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+                        <h4 className="text-lg font-semibold text-yellow-600 group-hover:text-yellow-700 transition-colors">
+                          {p.name}
+                        </h4>
+                        <p className="text-sm text-gray-500 mt-1">₹{p.price}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
     </div>

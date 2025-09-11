@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const PRODUCT_API = "https://zaafa-backend.onrender.com/api/products";
-const CATEGORY_API = "https://zaafa-backend.onrender.com/api/categories";
+const PRODUCT_API = "http://localhost:5000/api/products";
+const CATEGORY_API = "http://localhost:5000/api/categories";
 
 export default function ProductManagement() {
   const [products, setProducts] = useState([]);

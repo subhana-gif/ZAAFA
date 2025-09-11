@@ -5,7 +5,7 @@ import Category from "../models/category.js";
 
 const router = express.Router();
 
-// Search Products & Categories
+// Autocomplete Search
 router.get("/", async (req, res) => {
   try {
     const { query } = req.query;
@@ -13,33 +13,30 @@ router.get("/", async (req, res) => {
       return res.status(400).json({ error: "Query is required" });
     }
 
-    // Try to find category match
-    const category = await Category.findOne({
+    const categories = await Category.find({
       name: { $regex: query, $options: "i" },
       isDeleted: false,
-    });
+    }).select("_id name");
 
-    if (category) {
-      return res.json({
-        type: "category",
-        categoryId: category._id,
-      });
-    }
-
-    // Try to find product match
-    const product = await Product.findOne({
+    const products = await Product.find({
       name: { $regex: query, $options: "i" },
-    }).populate("category");
+    })
+      .select("_id name")
+      .populate("category", "name");
 
-    if (product) {
-      return res.json({
+    res.json({
+      categories: categories.map((c) => ({
+        type: "category",
+        id: c._id,
+        name: c.name,
+      })),
+      products: products.map((p) => ({
         type: "product",
-        productId: product._id,
-      });
-    }
-
-    // Nothing found
-    res.json({ type: "none" });
+        id: p._id,
+        name: p.name,
+        category: p.category?.name,
+      })),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

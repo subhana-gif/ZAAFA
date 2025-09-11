@@ -35,12 +35,27 @@ router.post("/", upload.single("image"), async (req, res) => {
 // Get all products
 router.get("/", async (req, res) => {
   try {
-    const products = await Product.find()
+    let { limit = 12, page = 1, category, search } = req.query;
+    limit = parseInt(limit);
+    page = parseInt(page);
+
+    const filter = {};
+    if (category) filter.category = category;
+    if (search) filter.name = { $regex: search, $options: "i" };
+
+    const total = await Product.countDocuments(filter);
+
+    const products = await Product.find(filter)
       .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
       .populate("category")
       .lean();
 
-    res.json(products);
+    res.json({
+      products, // array of products
+      totalPages: Math.ceil(total / limit), // total pages for pagination
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

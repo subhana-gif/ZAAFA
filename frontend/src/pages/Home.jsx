@@ -1,208 +1,206 @@
-import { useState } from "react";
-import { ArrowLeft, MessageCircle, Search, Instagram } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const ownerNumber = "7736062779";
+const API_BASE_URL = "http://localhost:5000/api";
 
-export default function HeaderLayout({ children }) {
+export default function HomePage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const currentPath = location.pathname;
+  const [categories, setCategories] = useState([]);
+  const [latestProducts, setLatestProducts] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [error, setError] = useState("");
 
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleDirectWhatsApp = () => {
-    const message = "Hello, I'd like to know more about your products.";
-    const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(
-      message
-    )}`;
-    window.open(whatsappUrl, "_blank");
-  };
-
-  const goToHome = () => {
-    navigate("/");
-  };
-
-  const goBack = () => {
-    window.history.back();
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery("");
+  // Fetch categories from backend
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/categories`);
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      const data = await response.json();
+      setCategories(data);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      setError('Failed to load categories');
+    } finally {
+      setLoadingCategories(false);
     }
   };
 
-  const isHomePage = currentPath === "/";
-  const isProductDetailPage = currentPath.startsWith("/product/");
+  // Fetch latest products (limit 12)
+const fetchLatestProducts = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/products?limit=4&page=1`);
+    if (!response.ok) throw new Error('Failed to fetch products');
+
+    const data = await response.json();
+
+    // data.products contains the array
+    setLatestProducts(data.products || []); 
+  } catch (err) {
+    console.error('Error fetching products:', err);
+    setError('Failed to load latest products');
+  } finally {
+    setLoadingProducts(false);
+  }
+};
+
+  useEffect(() => {
+    fetchCategories();
+    fetchLatestProducts();
+  }, []);
+
+  const getImageUrl = (base64String) => base64String ? `data:image/jpeg;base64,${base64String}` : null;
+
+  const goToProducts = (categoryId) => navigate(`/products/${categoryId}`);
+  const goToAllProducts = () => navigate('/products');
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white shadow-lg border-b border-yellow-200">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
-            {/* Logo */}
-            <div
-              className="flex items-center space-x-2 cursor-pointer"
-              onClick={goToHome}
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">Z</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-yellow-600">ZAAFA</h1>
-                <p className="text-xs text-gray-600">Online Store</p>
-              </div>
-            </div>
-
-            {/* Search Bar */}
-            <form
-              onSubmit={handleSearch}
-              className="flex-1 max-w-md hidden md:flex items-center bg-gray-100 rounded-lg overflow-hidden"
-            >
-              <input
-                type="text"
-                placeholder="Search products or categories..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-3 py-2 bg-transparent outline-none text-gray-700"
-              />
-              <button
-                type="submit"
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 flex items-center justify-center"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-            </form>
-
-            <div className="flex items-center gap-3">
-              {/* Instagram Button */}
-              <a
-                href="https://www.instagram.com/zaafa_onlinestore/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 bg-pink-100 hover:bg-pink-200 rounded-full transition-colors"
-              >
-                <Instagram className="h-5 w-5 text-pink-600" />
-              </a>
-
-              {/* Back Button for non-home pages */}
-              {!isHomePage && (
-                <button
-                  onClick={goBack}
-                  className="flex items-center space-x-2 px-4 py-2 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors"
-                >
-                  <ArrowLeft className="h-4 w-4 text-yellow-600" />
-                  <span className="text-yellow-600 font-medium">Back</span>
-                </button>
-              )}
+    <div className="min-h-screen bg-white">
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-4 my-4">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
             </div>
           </div>
-        </div>
-      </header>
-
-      {/* Page Content */}
-      <main>{children}</main>
-
-      {/* Floating WhatsApp Button - Hide on product detail page */}
-      {!isProductDetailPage && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <button
-            onClick={handleDirectWhatsApp}
-            className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-all transform hover:scale-110 flex items-center gap-2"
-            title="Chat on WhatsApp"
-          >
-            <MessageCircle className="h-6 w-6" />
-          </button>
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="bg-gray-100 border-t border-gray-200">
-        <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Company Info */}
-            <div>
-              <div className="flex items-center space-x-2 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-2xl">Z</span>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-yellow-600">ZAAFA</h1>
-                  <p className="text-sm text-gray-600">Online Store</p>
-                </div>
-              </div>
-              <p className="text-gray-600 mb-6">
-                Your trusted partner for premium quality products. We deliver
-                excellence with every purchase.
-              </p>
-              <div className="flex items-center text-gray-600 hover:text-yellow-600 transition-colors">
-                <span>📞 +91 {ownerNumber}</span>
-              </div>
-            </div>
+      {/* Hero Section */}
+      <section className="bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-5xl md:text-7xl font-bold mb-6">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 to-yellow-500">
+              Premium
+            </span>
+            <br />
+            <span className="text-gray-900">Collection</span>
+          </h2>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Discover luxury products with exceptional quality and style
+          </p>
+          <button 
+            onClick={goToAllProducts}
+            className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-yellow-600 hover:to-yellow-700 transition-all transform hover:scale-105 shadow-lg"
+          >
+            Shop Now
+          </button>
+        </div>
+      </section>
 
-            {/* Quick Links */}
-            <div>
-              <h4 className="text-lg font-semibold text-yellow-600 mb-4">
-                Quick Links
-              </h4>
-              <ul className="space-y-2">
-                {[
-                  { name: "Home", path: "/" },
-                  { name: "All Products", path: "/products" },
-                  { name: "Contact Us", action: handleDirectWhatsApp },
-                ].map((link) => (
-                  <li key={link.name}>
-                    {link.path ? (
-                      <button
-                        onClick={() => navigate(link.path)}
-                        className="text-gray-600 hover:text-yellow-600 transition-colors text-left"
-                      >
-                        {link.name}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={link.action}
-                        className="text-gray-600 hover:text-yellow-600 transition-colors text-left"
-                      >
-                        {link.name}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
+      {/* Categories Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h3 className="text-3xl font-bold text-center mb-12 text-yellow-600">Shop by Category</h3>
+          {loadingCategories ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl p-6 animate-pulse shadow-md">
+                  <div className="w-full h-32 bg-gray-200 rounded-lg mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </div>
+              ))}
             </div>
-
-            {/* Contact Info */}
-            <div>
-              <h4 className="text-lg font-semibold text-yellow-600 mb-4">
-                Get in Touch
-              </h4>
-              <div className="space-y-3">
-                <p className="text-gray-600">
-                  Have questions? We're here to help!
-                </p>
-                <button
-                  onClick={handleDirectWhatsApp}
-                  className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2"
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {categories.map((category) => (
+                <div
+                  key={category._id}
+                  onClick={() => goToProducts(category._id)}
+                  className="group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 shadow-md bg-white hover:shadow-lg"
                 >
-                  <MessageCircle className="h-4 w-4" />
-                  Chat on WhatsApp
+                  <div className="p-6 text-center">
+                    {category.image ? (
+                      <img
+                        src={getImageUrl(category.image)}
+                        alt={category.name}
+                        className="w-24 h-24 mx-auto mb-4 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 mx-auto mb-4 rounded-lg bg-yellow-200 flex items-center justify-center">
+                        <span className="text-yellow-600 text-2xl font-bold">
+                          {category.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                    <h4 className="text-lg font-semibold text-yellow-600 group-hover:text-yellow-700 transition-colors">
+                      {category.name}
+                    </h4>
+                    {category.description && (
+                      <p className="text-sm text-gray-500 mt-2">{category.description}</p>
+                    )}
+                    <div className="flex items-center justify-center mt-3 text-yellow-600">
+                      <span className="text-sm">View Products</span>
+                      <ArrowRight className="h-4 w-4 ml-1" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Latest Products Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h3 className="text-3xl font-bold text-center mb-12 text-yellow-600">Latest Products</h3>
+          {loadingProducts ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl p-6 animate-pulse shadow-md">
+                  <div className="w-full h-32 bg-gray-200 rounded-lg mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {latestProducts.map((product) => (
+                  <div
+                    key={product._id}
+                    onClick={() => navigate(`/product/${product._id}`)}
+                    className="group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 shadow-md bg-white hover:shadow-lg"
+                  >
+                    <div className="p-6 text-center">
+                      {product.image ? (
+                        <img
+                          src={getImageUrl(product.image)}
+                          alt={product.name}
+                          className="w-32 h-32 mx-auto mb-4 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="w-32 h-32 mx-auto mb-4 rounded-lg bg-yellow-200 flex items-center justify-center">
+                          <span className="text-yellow-600 text-2xl font-bold">
+                            {product.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                      <h4 className="text-lg font-semibold text-yellow-600 group-hover:text-yellow-700 transition-colors">
+                        {product.name}
+                      </h4>
+                      {product.price && (
+                        <p className="text-sm text-gray-500 mt-1">₹{product.price}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-center mt-8">
+                <button
+                  onClick={goToAllProducts}
+                  className="bg-yellow-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition-all"
+                >
+                  Show More
                 </button>
               </div>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-200 mt-8 pt-8 text-center">
-            <p className="text-gray-600">
-              © 2024 ZAAFA Online Store. All rights reserved.
-            </p>
-          </div>
+            </>
+          )}
         </div>
-      </footer>
+      </section>
     </div>
   );
 }

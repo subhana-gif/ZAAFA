@@ -26,8 +26,13 @@ app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
 
 // Routes
 app.use("/api/products", productRoutes);
-app.use("/api/categories",categoryRoutes)
-app.use("/api/search",searchRoutes)
+app.use("/api/categories", categoryRoutes);
+app.use("/api/search", searchRoutes);
+
+// Handle unknown routes with 404 JSON response
+app.use((req, res) => {
+  res.status(404).json({ error: "Not Found" });
+});
 
 // Connect MongoDB & Start Server
 mongoose.connect(process.env.MONGO_URI)

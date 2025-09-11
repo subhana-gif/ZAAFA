@@ -8,6 +8,7 @@ export default function HeaderLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
+  const [suggestions, setSuggestions] = useState({ categories: [], products: [] });
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -32,15 +33,21 @@ const handleSearch = async (e) => {
   if (!searchQuery.trim()) return;
 
   try {
-    const res = await fetch(`/api/search?query=${encodeURIComponent(searchQuery)}`);
+    // Fetch suggestions from the dedicated suggestions endpoint
+    const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`)
     const data = await res.json();
 
-    if (data.type === "category") {
-      navigate(`/category/${data.categoryId}`);
-    } else if (data.type === "product") {
-      navigate(`/product/${data.productId}`);
-    } else {
-      navigate(`/not-found?query=${encodeURIComponent(searchQuery)}`);
+    // If there are category matches, navigate to the first category page
+    if (data.categories && data.categories.length > 0) {
+      navigate(`/products/${data.categories[0].id}`);
+    }
+    // Else if there are product matches, navigate to the first product detail page
+    else if (data.products && data.products.length > 0) {
+      navigate(`/product/${data.products[0].id}`);
+    }
+    // Otherwise, navigate to products page with search query
+    else {
+      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
     }
   } catch (err) {
     console.error("Search error:", err);
@@ -73,24 +80,79 @@ const handleSearch = async (e) => {
             </div>
 
             {/* Search Bar */}
-            <form
-              onSubmit={handleSearch}
-              className="flex-1 max-w-md hidden md:flex items-center bg-gray-100 rounded-lg overflow-hidden"
-            >
-              <input
-                type="text"
-                placeholder="Search products or categories..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-3 py-2 bg-transparent outline-none text-gray-700"
-              />
-              <button
-                type="submit"
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 flex items-center justify-center"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-            </form>
+{/* Search Bar with Autocomplete */}
+<div className="relative flex-1 max-w-md hidden md:flex">
+  <form
+    onSubmit={handleSearch}
+    className="flex-1 flex items-center bg-gray-100 rounded-lg overflow-hidden"
+  >
+    <input
+      type="text"
+      placeholder="Search products or categories..."
+      value={searchQuery}
+      onChange={async (e) => {
+        const val = e.target.value;
+        setSearchQuery(val);
+
+        if (val.trim()) {
+          try {
+            const res = await fetch(`/api/search?query=${encodeURIComponent(val)}`);
+            const data = await res.json();
+            setSuggestions(data);
+          } catch (err) {
+            console.error("Suggestion fetch error:", err);
+            setSuggestions({ categories: [], products: [] });
+          }
+        } else {
+          setSuggestions({ categories: [], products: [] });
+        }
+      }}
+      className="flex-1 px-3 py-2 bg-transparent outline-none text-gray-700"
+    />
+    <button
+      type="submit"
+      className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 flex items-center justify-center"
+    >
+      <Search className="h-5 w-5" />
+    </button>
+  </form>
+
+  {/* Suggestions Dropdown */}
+  {searchQuery && (suggestions.categories?.length > 0 || suggestions.products?.length > 0) && (
+    <div className="absolute top-full left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 z-50">
+      <ul className="max-h-60 overflow-y-auto">
+        {/* Categories */}
+        {suggestions.categories?.map((cat) => (
+          <li
+            key={cat.id}
+            onClick={() => {
+              navigate(`/products/${cat.id}`);
+              setSearchQuery("");
+              setSuggestions({ categories: [], products: [] });
+            }}
+            className="px-4 py-2 hover:bg-yellow-50 cursor-pointer text-yellow-700 font-medium"
+          >
+            Category: {cat.name}
+          </li>
+        ))}
+        {/* Products */}
+        {suggestions.products?.map((prod) => (
+          <li
+            key={prod.id}
+            onClick={() => {
+              navigate(`/product/${prod.id}`);
+              setSearchQuery("");
+              setSuggestions({ categories: [], products: [] });
+            }}
+            className="px-4 py-2 hover:bg-yellow-50 cursor-pointer text-gray-700"
+          >
+            Product: {prod.name}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</div>
 
             <div className="flex items-center gap-3">
               {/* Instagram Button */}
