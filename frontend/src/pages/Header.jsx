@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle, Search, Instagram } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const ownerNumber = "7736062779";
@@ -9,31 +9,46 @@ export default function HeaderLayout({ children }) {
   const location = useLocation();
   const currentPath = location.pathname;
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const handleDirectWhatsApp = () => {
     const message = "Hello, I'd like to know more about your products.";
-    const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(
+      message
+    )}`;
     window.open(whatsappUrl, "_blank");
   };
 
   const goToHome = () => {
-    navigate('/');
+    navigate("/");
   };
 
   const goBack = () => {
     window.history.back();
   };
 
-  const isHomePage = currentPath === '/';
-  const isProductDetailPage = currentPath.startsWith('/product/');
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery("");
+    }
+  };
+
+  const isHomePage = currentPath === "/";
+  const isProductDetailPage = currentPath.startsWith("/product/");
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white shadow-lg border-b border-yellow-200">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             {/* Logo */}
-            <div className="flex items-center space-x-2 cursor-pointer" onClick={goToHome}>
+            <div
+              className="flex items-center space-x-2 cursor-pointer"
+              onClick={goToHome}
+            >
               <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">Z</span>
               </div>
@@ -43,16 +58,48 @@ export default function HeaderLayout({ children }) {
               </div>
             </div>
 
-            {/* Back Button for non-home pages */}
-            {!isHomePage && (
+            {/* Search Bar */}
+            <form
+              onSubmit={handleSearch}
+              className="flex-1 max-w-md hidden md:flex items-center bg-gray-100 rounded-lg overflow-hidden"
+            >
+              <input
+                type="text"
+                placeholder="Search products or categories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 px-3 py-2 bg-transparent outline-none text-gray-700"
+              />
               <button
-                onClick={goBack}
-                className="flex items-center space-x-2 px-4 py-2 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors"
+                type="submit"
+                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 flex items-center justify-center"
               >
-                <ArrowLeft className="h-4 w-4 text-yellow-600" />
-                <span className="text-yellow-600 font-medium">Back</span>
+                <Search className="h-5 w-5" />
               </button>
-            )}
+            </form>
+
+            <div className="flex items-center gap-3">
+              {/* Instagram Button */}
+              <a
+                href="https://www.instagram.com/zaafa_onlinestore/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 bg-pink-100 hover:bg-pink-200 rounded-full transition-colors"
+              >
+                <Instagram className="h-5 w-5 text-pink-600" />
+              </a>
+
+              {/* Back Button for non-home pages */}
+              {!isHomePage && (
+                <button
+                  onClick={goBack}
+                  className="flex items-center space-x-2 px-4 py-2 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4 text-yellow-600" />
+                  <span className="text-yellow-600 font-medium">Back</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -89,7 +136,8 @@ export default function HeaderLayout({ children }) {
                 </div>
               </div>
               <p className="text-gray-600 mb-6">
-                Your trusted partner for premium quality products. We deliver excellence with every purchase.
+                Your trusted partner for premium quality products. We deliver
+                excellence with every purchase.
               </p>
               <div className="flex items-center text-gray-600 hover:text-yellow-600 transition-colors">
                 <span>📞 +91 {ownerNumber}</span>
@@ -98,12 +146,14 @@ export default function HeaderLayout({ children }) {
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-lg font-semibold text-yellow-600 mb-4">Quick Links</h4>
+              <h4 className="text-lg font-semibold text-yellow-600 mb-4">
+                Quick Links
+              </h4>
               <ul className="space-y-2">
                 {[
-                  { name: 'Home', path: '/' },
-                  { name: 'All Products', path: '/products' },
-                  { name: 'Contact Us', action: handleDirectWhatsApp }
+                  { name: "Home", path: "/" },
+                  { name: "All Products", path: "/products" },
+                  { name: "Contact Us", action: handleDirectWhatsApp },
                 ].map((link) => (
                   <li key={link.name}>
                     {link.path ? (
@@ -128,7 +178,9 @@ export default function HeaderLayout({ children }) {
 
             {/* Contact Info */}
             <div>
-              <h4 className="text-lg font-semibold text-yellow-600 mb-4">Get in Touch</h4>
+              <h4 className="text-lg font-semibold text-yellow-600 mb-4">
+                Get in Touch
+              </h4>
               <div className="space-y-3">
                 <p className="text-gray-600">
                   Have questions? We're here to help!
