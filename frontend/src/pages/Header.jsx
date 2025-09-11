@@ -27,13 +27,27 @@ export default function HeaderLayout({ children }) {
     window.history.back();
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery("");
+const handleSearch = async (e) => {
+  e.preventDefault();
+  if (!searchQuery.trim()) return;
+
+  try {
+    const res = await fetch(`/api/search?query=${encodeURIComponent(searchQuery)}`);
+    const data = await res.json();
+
+    if (data.type === "category") {
+      navigate(`/category/${data.categoryId}`);
+    } else if (data.type === "product") {
+      navigate(`/product/${data.productId}`);
+    } else {
+      navigate(`/not-found?query=${encodeURIComponent(searchQuery)}`);
     }
-  };
+  } catch (err) {
+    console.error("Search error:", err);
+  } finally {
+    setSearchQuery("");
+  }
+};
 
   const isHomePage = currentPath === "/";
   const isProductDetailPage = currentPath.startsWith("/product/");
