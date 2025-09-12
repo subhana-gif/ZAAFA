@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "https://zaafa-backend.onrender.com/api";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ export default function HomePage() {
   // Fetch categories from backend
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/categories`);
+      const response = await fetch(`${API_BASE_URL}/categories/user`);
       if (!response.ok) throw new Error('Failed to fetch categories');
       const data = await response.json();
       setCategories(data);
@@ -30,7 +30,7 @@ export default function HomePage() {
   // Fetch latest products (limit 12)
 const fetchLatestProducts = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/products?limit=4&page=1`);
+    const response = await fetch(`${API_BASE_URL}/products/user?limit=4&page=1`);
     if (!response.ok) throw new Error('Failed to fetch products');
 
     const data = await response.json();
@@ -166,24 +166,24 @@ const fetchLatestProducts = async () => {
                     className="group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 shadow-md bg-white hover:shadow-lg"
                   >
                     <div className="p-6 text-center">
-                      {product.image ? (
-                        <img
-                          src={getImageUrl(product.image)}
-                          alt={product.name}
-                          className="w-32 h-32 mx-auto mb-4 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <div className="w-32 h-32 mx-auto mb-4 rounded-lg bg-yellow-200 flex items-center justify-center">
-                          <span className="text-yellow-600 text-2xl font-bold">
-                            {product.name.charAt(0)}
-                          </span>
-                        </div>
-                      )}
+                    {product.images?.length > 0 ? (
+                      <img
+                        src={getImageUrl(product.images[0])}   // ✅ use first image from array
+                        alt={product.name}
+                        className="w-32 h-32 mx-auto mb-4 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-32 h-32 mx-auto mb-4 rounded-lg bg-yellow-200 flex items-center justify-center">
+                        <span className="text-yellow-600 text-2xl font-bold">
+                          {product.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
                       <h4 className="text-lg font-semibold text-yellow-600 group-hover:text-yellow-700 transition-colors">
                         {product.name}
                       </h4>
                       {product.price && (
-                        <p className="text-sm text-gray-500 mt-1">₹{product.price}</p>
+                        <p className="text-sm text-gray-500 mt-1">AED  {product.price}</p>
                       )}
                     </div>
                   </div>

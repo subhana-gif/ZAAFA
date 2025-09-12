@@ -3,7 +3,7 @@ import { useLocation, useParams } from "react-router-dom";
 import { MessageCircle, ArrowLeft } from "lucide-react";
 
 const ownerNumber = "7736062779";
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "https://zaafa-backend.onrender.com/api";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -13,8 +13,10 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(!product);
   const [loadingRelated, setLoadingRelated] = useState(true);
   const [error, setError] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
 
-  // Fetch product if not passed via state
+  const [zoomStyle, setZoomStyle] = useState({ transformOrigin: "center" });
+
   useEffect(() => {
     if (!product && id) {
       fetchProduct();
@@ -25,21 +27,24 @@ export default function ProductDetailPage() {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/products/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch product');
+      if (!response.ok) throw new Error("Failed to fetch product");
       const data = await response.json();
       setProduct(data);
+      setSelectedImage(data.images?.[0] || null);
     } catch (err) {
-      console.error('Error fetching product:', err);
-      setError('Failed to load product details');
+      console.error("Error fetching product:", err);
+      setError("Failed to load product details");
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch related products based on same category
   useEffect(() => {
     if (product?.category?._id) {
       fetchRelatedProducts(product.category._id, product._id);
+    }
+    if (product?.images?.length > 0) {
+      setSelectedImage(product.images[0]);
     }
   }, [product]);
 
@@ -51,8 +56,6 @@ export default function ProductDetailPage() {
       );
       if (!response.ok) throw new Error("Failed to fetch related products");
       const data = await response.json();
-
-      // Exclude current product
       const filtered = data.products.filter((p) => p._id !== excludeProductId);
       setRelatedProducts(filtered);
     } catch (err) {
@@ -65,19 +68,31 @@ export default function ProductDetailPage() {
   const getImageUrl = (base64String) =>
     base64String ? `data:image/jpeg;base64,${base64String}` : null;
 
-  const handleBuyOnWhatsApp = (product) => {
-    const productUrl = `https://zaafa-backend.onrender.com/share/${product._id}`;
-    const message = `Hello, I want to buy:\n\n*${product.name}*\nPrice: Rs.${product.price}\n\nCheck it here: ${productUrl}`;
-    const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(
-      message
-    )}`;
-    window.open(whatsappUrl, "_blank");
-  };
+const handleBuyOnWhatsApp = (product) => {
+  const productUrl = `https://zaafa-backend.onrender.com/product/${product._id}`;
+  const message = `Hello, I want to buy:\n\n${product.name}\nPrice: AED  ${product.price}\n\nCheck it here: ${productUrl}`;
+  const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, "_blank");
+};
 
   const goToProductDetail = (p) => {
     window.scrollTo(0, 0);
     setProduct(p);
     setRelatedProducts([]);
+  };
+
+  const handleMouseMove = (e) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = ((e.pageX - left) / width) * 100;
+    const y = ((e.pageY - top) / height) * 100;
+    setZoomStyle({
+      transformOrigin: `${x}% ${y}%`,
+      transform: "scale(2)", // zoom level
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setZoomStyle({ transformOrigin: "center", transform: "scale(1)" });
   };
 
   if (loading) {
@@ -93,7 +108,9 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading Product</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Error Loading Product
+          </h2>
           <p className="text-gray-600">{error || "Product not found"}</p>
           <button
             onClick={() => window.history.back()}
@@ -112,14 +129,37 @@ export default function ProductDetailPage() {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Product Image */}
-            <div className="space-y-4">
-              <div className="relative overflow-hidden rounded-xl shadow-lg">
-                {product.image ? (
+            {/* Product Images */}
+            <div className="flex gap-4">
+              {/* Thumbnails */}
+              <div className="flex flex-col gap-3 w-20">
+                {product.images?.map((img, idx) => (
                   <img
-                    src={getImageUrl(product.image)}
+                    key={idx}
+                    src={getImageUrl(img)}
+                    alt={`thumb-${idx}`}
+                    onClick={() => setSelectedImage(img)}
+                    className={`w-20 h-20 object-cover rounded-lg cursor-pointer border ${
+                      selectedImage === img
+                        ? "border-yellow-500 ring-2 ring-yellow-400"
+                        : "border-gray-200"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Main Image with Smart Zoom */}
+              <div
+                className="flex-1 relative overflow-hidden rounded-xl shadow-lg bg-gray-50"
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+              >
+                {selectedImage ? (
+                  <img
+                    src={getImageUrl(selectedImage)}
                     alt={product.name}
-                    className="w-full h-96 lg:h-[500px] object-cover"
+                    className="w-full h-96 lg:h-[500px] object-cover transition-transform duration-300"
+                    style={zoomStyle}
                   />
                 ) : (
                   <div className="w-full h-96 lg:h-[500px] bg-yellow-100 flex items-center justify-center">
@@ -134,16 +174,21 @@ export default function ProductDetailPage() {
             {/* Product Details */}
             <div className="space-y-6">
               <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-4">{product.name}</h1>
+                <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                  {product.name}
+                </h1>
                 <div className="text-4xl font-bold text-yellow-600 mb-6">
-                  ₹{product.price}
+                  AED  {product.price}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Description</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  Description
+                </h3>
                 <p className="text-gray-600 leading-relaxed">
-                  {product.description || 'No description available for this product.'}
+                  {product.description ||
+                    "No description available for this product."}
                 </p>
               </div>
 
@@ -179,11 +224,16 @@ export default function ProductDetailPage() {
           {/* Related Products */}
           {relatedProducts.length > 0 && (
             <div className="mt-16">
-              <h2 className="text-3xl font-bold text-yellow-600 mb-6">Related Products</h2>
+              <h2 className="text-3xl font-bold text-yellow-600 mb-6">
+                Related Products
+              </h2>
               {loadingRelated ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[...Array(4)].map((_, i) => (
-                    <div key={i} className="bg-white rounded-xl p-6 animate-pulse shadow-md">
+                    <div
+                      key={i}
+                      className="bg-white rounded-xl p-6 animate-pulse shadow-md"
+                    >
                       <div className="w-full h-48 bg-gray-200 rounded-lg mb-4"></div>
                       <div className="h-4 bg-gray-200 rounded mb-2"></div>
                       <div className="h-4 bg-gray-200 rounded"></div>
@@ -199,9 +249,9 @@ export default function ProductDetailPage() {
                       className="group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 shadow-md bg-white hover:shadow-lg"
                     >
                       <div className="p-4 text-center">
-                        {p.image ? (
+                        {p.images?.[0] ? (
                           <img
-                            src={getImageUrl(p.image)}
+                            src={getImageUrl(p.images[0])}
                             alt={p.name}
                             className="w-32 h-32 mx-auto mb-4 rounded-lg object-cover"
                           />
@@ -215,7 +265,9 @@ export default function ProductDetailPage() {
                         <h4 className="text-lg font-semibold text-yellow-600 group-hover:text-yellow-700 transition-colors">
                           {p.name}
                         </h4>
-                        <p className="text-sm text-gray-500 mt-1">₹{p.price}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          AED  {p.price}
+                        </p>
                       </div>
                     </div>
                   ))}

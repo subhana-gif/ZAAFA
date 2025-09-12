@@ -6,7 +6,7 @@ const categorySchema = new mongoose.Schema(
     name: { type: String, required: true, unique: true },
     description: { type: String },
     image: { type: String }, // store image as Base64 string or image URL
-    isDeleted: { type: Boolean, default: false }, // Soft delete
+    status: { type: String, enum: ["active", "blocked"], default: "active" } // ✅
   },
   { timestamps: true }
 );

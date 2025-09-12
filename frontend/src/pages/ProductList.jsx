@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "https://zaafa-backend.onrender.com/api";
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export default function ProductsPage() {
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/categories`);
+      const response = await fetch(`${API_BASE_URL}/categories/user`);
       if (!response.ok) throw new Error("Failed to fetch categories");
       const data = await response.json();
       setCategories(data);
@@ -34,7 +34,7 @@ export default function ProductsPage() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      let url = `${API_BASE_URL}/products?limit=${limit}&page=${page}`;
+      let url = `${API_BASE_URL}/products/user?limit=${limit}&page=${page}`;
       if (categoryId) url += `&category=${categoryId}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch products");
@@ -119,20 +119,19 @@ export default function ProductsPage() {
                     onClick={() => goToProductDetail(product)}
                     className="group bg-white rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-gray-200 cursor-pointer"
                   >
-                    <div className="relative overflow-hidden">
-                      {product.image ? (
-                        <img
-                          src={getImageUrl(product.image)}
-                          alt={product.name}
-                          className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-64 bg-yellow-100 flex items-center justify-center">
-                          <span className="text-yellow-600 text-4xl font-bold">
-                            {product.name.charAt(0)}
-                          </span>
-                        </div>
-                      )}
+                    <div className="p-6 text-center">
+                    {product.images?.length > 0 ? (
+                      <img
+                        src={getImageUrl(product.images ? product.images[0] : product.image)}
+                        alt={product.name}
+                        className="w-32 h-32 mx-auto mb-4 rounded-lg object-cover"
+                      />                    ) : (
+                      <div className="w-32 h-32 mx-auto mb-4 rounded-lg bg-yellow-200 flex items-center justify-center">
+                        <span className="text-yellow-600 text-2xl font-bold">
+                          {product.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
                     </div>
 
                     <div className="p-6">
@@ -145,7 +144,7 @@ export default function ProductsPage() {
 
                       <div className="flex items-center justify-between">
                         <span className="text-2xl font-bold text-yellow-600">
-                          ₹{product.price}
+                          AED  {product.price}
                         </span>
                         <div className="flex items-center text-yellow-600">
                           <span className="text-sm">View Details</span>

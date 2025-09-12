@@ -1,19 +1,54 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import CropModal from "../Component/Cropper"; 
+import {useAlert} from "../Component/AlertContext"
 
-const PRODUCT_API = "http://localhost:5000/api/products";
-const CATEGORY_API = "http://localhost:5000/api/categories";
+
+const PRODUCT_API = "https://zaafa-backend.onrender.com/api/products";
+const CATEGORY_API = "https://zaafa-backend.onrender.com/api/categories";
+
+function Modal({ isOpen, onClose, children }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-3xl relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function ProductManagement() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [form, setForm] = useState({ name: "", price: "", description: "", category: "" });
-  const [image, setImage] = useState(null);
+  const [form, setForm] = useState({
+    name: "",
+    price: "",
+    description: "",
+    category: "",
+    existingImages: [],
+  });
+  const [images, setImages] = useState([]); // new images
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const { showAlert } = useAlert();
+
+  // crop modal
+  const [cropImageFile, setCropImageFile] = useState(null); // File/Blob to crop
+  const [cropReplaceIndex, setCropReplaceIndex] = useState(null); // existing image index, null for new image
+
+  // pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
   useEffect(() => {
     fetchProducts();
@@ -23,11 +58,11 @@ export default function ProductManagement() {
   const fetchProducts = async () => {
     try {
       setFetchLoading(true);
-      const response = await axios.get(PRODUCT_API);
-      setProducts(response.data.products || response.data);
+      const res = await axios.get(PRODUCT_API);
+      setProducts(res.data.products || res.data);
     } catch (err) {
-      console.error("Error fetching products:", err);
-      alert("❌ Error fetching products");
+      console.error(err);
+      showAlert("❌ Error fetching products");
     } finally {
       setFetchLoading(false);
     }
@@ -38,8 +73,8 @@ export default function ProductManagement() {
       const res = await axios.get(CATEGORY_API);
       setCategories(res.data);
     } catch (err) {
-      console.error("Error fetching categories:", err);
-      alert("❌ Error fetching categories");
+      console.error(err);
+      showAlert("❌ Error fetching categories");
     }
   };
 
@@ -47,8 +82,27 @@ export default function ProductManagement() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const resetForm = () => {
+    setForm({
+      name: "",
+      price: "",
+      description: "",
+      category: "",
+      existingImages: [],
+    });
+    setImages([]);
+    setEditingId(null);
+    setShowForm(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if ((form.existingImages?.length || 0) + images.length !== 4) {
+      showAlert("Product must have exactly 4 images");
+      return;
+    }
+
     setLoading(true);
 
     const data = new FormData();
@@ -56,67 +110,73 @@ export default function ProductManagement() {
     data.append("price", form.price);
     data.append("description", form.description);
     if (form.category) data.append("categoryId", form.category);
-    if (image) data.append("image", image);
+
+    // existing images as base64
+    (form.existingImages || []).forEach((imgBase64, idx) => {
+      data.append(`existingImages[${idx}]`, imgBase64);
+    });
+
+    // new images as File/Blob
+    images.forEach((fileOrBlob) => {
+      data.append("images", fileOrBlob);
+    });
 
     try {
       if (editingId) {
         await axios.put(`${PRODUCT_API}/${editingId}`, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        alert("✅ Product updated successfully!");
+        showAlert("✅ Product updated successfully!");
       } else {
         await axios.post(PRODUCT_API, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        alert("✅ Product added successfully!");
+        showAlert("✅ Product added successfully!");
       }
-
       await fetchProducts();
       resetForm();
     } catch (err) {
       console.error(err);
       const errorMessage = err.response?.data?.error || "Error saving product";
-      alert(`❌ ${errorMessage}`);
+      showAlert(`❌ ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
 
-const handleEdit = (product) => {
-  setForm({
-    name: product.name,
-    price: product.price.toString(),
-    description: product.description || "",
-    category: product.category?._id || "", // ✅ works
-  });
-  setEditingId(product._id);
-  setShowForm(true);
-};
+  const handleEdit = (product) => {
+    setForm({
+      name: product.name,
+      price: product.price.toString(),
+      description: product.description || "",
+      category: product.category?._id || "",
+      existingImages: product.images || [],
+    });
+    setEditingId(product._id);
+    setImages([]);
+    setShowForm(true);
+  };
 
-
-  const handleSoftDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        await axios.delete(`${PRODUCT_API}/${id}`);
-        alert("✅ Product deleted successfully!");
-        await fetchProducts();
-      } catch (err) {
-        console.error(err);
-        const errorMessage = err.response?.data?.error || "Error deleting product";
-        alert(`❌ ${errorMessage}`);
-      }
+  const handleToggleBlock = async (id, isBlocked) => {
+    try {
+      const newStatus = isBlocked ? "active" : "blocked";
+      await axios.patch(`${PRODUCT_API}/${id}/status`, { status: newStatus });
+      showAlert(`✅ Product ${isBlocked ? "unblocked" : "blocked"} successfully!`);
+      await fetchProducts();
+    } catch (err) {
+      console.error(err);
+      showAlert("❌ Error updating product status");
     }
   };
 
-  const resetForm = () => {
-    setForm({ name: "", price: "", description: "", category: "" });
-    setImage(null);
-    setEditingId(null);
-    setShowForm(false);
-  };
-
-  const filteredProducts = products.filter(product =>
+  const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   if (fetchLoading) {
@@ -130,121 +190,7 @@ const handleEdit = (product) => {
 
   return (
     <div>
-      {/* Add/Edit Form */}
-      {showForm && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-          <h2 className="text-xl font-semibold text-slate-900 mb-6">
-            {editingId ? "Edit Product" : "Add New Product"}
-          </h2>
-          
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Product Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Enter product name"
-                  value={form.name}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Price *
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  placeholder="0.00"
-                  value={form.price}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  step="0.01"
-                  min="0"
-                  required
-                />
-              </div>
-
-              {/* Category Dropdown */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Category *
-                </label>
-                <select
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  required
-                >
-                  <option value="">-- Select Category --</option>
-                  {categories.map((cat) => (
-                    <option key={cat._id} value={cat._id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  placeholder="Enter product description (optional)"
-                  value={form.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg resize-none"
-                />
-              </div>
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Product Image
-                </label>
-                <input
-                  type="file"
-                  onChange={(e) => setImage(e.target.files[0])}
-                  accept="image/*"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                />
-                {image && (
-                  <p className="mt-2 text-sm text-slate-600">
-                    Selected: {image.name}
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex gap-3 mt-6">
-              <button
-                type="submit"
-                disabled={loading || !form.name || !form.price || !form.category}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {loading ? "Saving..." : editingId ? "Update Product" : "Add Product"}
-              </button>
-              <button
-                onClick={resetForm}
-                type="button"
-                className="px-6 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Search Bar */}
+      {/* Search & Add Button */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex justify-between">
         <input
           type="text"
@@ -254,10 +200,13 @@ const handleEdit = (product) => {
           className="w-full px-3 py-2 border border-slate-300 rounded-lg"
         />
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
           className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
         >
-          {showForm ? "Close Form" : "Add Product"}
+          Add Product
         </button>
       </div>
 
@@ -266,23 +215,35 @@ const handleEdit = (product) => {
         <table className="w-full">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
+              <th className="px-6 py-4 text-left">Image</th>
               <th className="px-6 py-4 text-left">Product</th>
               <th className="px-6 py-4 text-left">Category</th>
               <th className="px-6 py-4 text-left">Price</th>
               <th className="px-6 py-4 text-left">Description</th>
-              <th className="px-6 py-4 text-left">Created</th>
+              <th className="px-6 py-4 text-left">Status</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {filteredProducts.map((product) => (
+            {paginatedProducts.map((product) => (
               <tr key={product._id}>
+                <td className="px-6 py-4">
+                  {product.images?.[0] ? (
+                    <img
+                      src={`data:image/jpeg;base64,${product.images[0]}`}
+                      alt={product.name}
+                      className="h-12 w-12 object-cover rounded"
+                    />
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td className="px-6 py-4">{product.name}</td>
                 <td className="px-6 py-4">{product.category?.name || "—"}</td>
-                <td className="px-6 py-4">${product.price.toFixed(2)}</td>
+                <td className="px-6 py-4">AED  {product.price.toFixed(2)}</td>
                 <td className="px-6 py-4">{product.description || "—"}</td>
                 <td className="px-6 py-4">
-                  {new Date(product.createdAt).toLocaleDateString()}
+                  {product.status === "blocked" ? "Blocked" : "Active"}
                 </td>
                 <td className="px-6 py-4 text-right">
                   <button
@@ -292,10 +253,19 @@ const handleEdit = (product) => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleSoftDelete(product._id)}
-                    className="text-red-600"
+                    onClick={() =>
+                      handleToggleBlock(
+                        product._id,
+                        product.status === "blocked"
+                      )
+                    }
+                    className={`${
+                      product.status === "blocked"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
                   >
-                    Delete
+                    {product.status === "blocked" ? "Unblock" : "Block"}
                   </button>
                 </td>
               </tr>
@@ -303,6 +273,236 @@ const handleEdit = (product) => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      <div className="flex justify-center gap-2 mt-4">
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrentPage(i + 1)}
+            className={`px-3 py-1 rounded-lg border ${
+              currentPage === i + 1
+                ? "bg-indigo-600 text-white"
+                : "bg-white text-gray-700"
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </div>
+
+      {/* Modal Form */}
+      <Modal isOpen={showForm} onClose={resetForm}>
+        <h2 className="text-xl font-semibold mb-4">
+          {editingId ? "Edit Product" : "Add New Product"}
+        </h2>
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Product Name *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Price *
+              </label>
+              <input
+                type="number"
+                name="price"
+                value={form.price}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Category *
+              </label>
+              <select
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="">-- Select Category --</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Description */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                rows={3}
+                className="w-full px-3 py-2 border rounded-lg resize-none"
+              />
+            </div>
+
+            {/* Images */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Product Images (exactly 4)
+              </label>
+
+              {/* Existing Images */}
+              {form.existingImages?.length > 0 && (
+                <div className="flex gap-3 mt-3 flex-wrap">
+                  {form.existingImages.map((img, idx) => (
+                    <div key={idx} className="relative">
+                      <img
+                        src={`data:image/jpeg;base64,${img}`}
+                        alt="preview"
+                        className="h-16 w-16 object-cover rounded"
+                      />
+                      <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 text-white text-xs font-medium cursor-pointer rounded">
+                        Replace
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            setCropImageFile(file);
+                            setCropReplaceIndex(idx);
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                      <span
+                        onClick={() => {
+                          const newImages = form.existingImages.filter(
+                            (_, i) => i !== idx
+                          );
+                          setForm({ ...form, existingImages: newImages });
+                        }}
+                        className="absolute top-0 right-0 bg-red-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs cursor-pointer"
+                      >
+                        ✕
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* New Images */}
+              {images.length > 0 && (
+                <div className="flex gap-3 mt-3 flex-wrap">
+{images.map((file, idx) => (
+  <div key={idx} className="relative">
+    <img
+      src={URL.createObjectURL(file)}
+      alt="preview"
+      className="h-16 w-16 object-cover rounded"
+    />
+    <span
+      onClick={() => {
+        const newFiles = images.filter((_, i) => i !== idx);
+        setImages(newFiles);
+      }}
+      className="absolute top-0 right-0 bg-red-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs cursor-pointer"
+    >
+      ✕
+    </span>
+  </div>
+))}
+                </div>
+              )}
+
+              {/* Upload Input */}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+
+                  setCropImageFile(file);
+                  setCropReplaceIndex(null); // null = new image
+                }}
+                className="w-full px-3 py-2 border rounded-lg mt-3"
+              />
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-3 mt-6">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {loading
+                ? "Saving..."
+                : editingId
+                ? "Update Product"
+                : "Add Product"}
+            </button>
+            <button
+              type="button"
+              onClick={resetForm}
+              className="px-6 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Crop Modal */}
+      {cropImageFile && (
+<CropModal
+  isOpen={!!cropImageFile}
+  imageFile={cropImageFile}
+  onClose={() => {
+    setCropImageFile(null);
+    setCropReplaceIndex(null);
+  }}
+  onCropComplete={async (blob) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result.split(",")[1];
+if (cropReplaceIndex !== null && cropReplaceIndex < form.existingImages.length) {
+  // Replace existing image
+  const newImages = [...form.existingImages];
+  newImages[cropReplaceIndex] = base64String;
+  setForm({ ...form, existingImages: newImages });
+} else {
+  // Add new image
+  setImages([...images, blob]); // store blob in images array for new uploads
+}
+
+setCropImageFile(null);
+setCropReplaceIndex(null);
+    };
+    reader.readAsDataURL(blob);
+  }}
+/>
+      )}
     </div>
   );
 }

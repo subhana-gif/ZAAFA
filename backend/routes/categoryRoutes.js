@@ -6,14 +6,15 @@ import fs from "fs";
 const router = express.Router();
 
 // Create Category
+
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { name, description } = req.body;
     let imageBase64 = null;
 
+    // If using memoryStorage, the file buffer is already in req.file.buffer
     if (req.file) {
-      const file = fs.readFileSync(req.file.path);
-      imageBase64 = file.toString("base64");
+      imageBase64 = req.file.buffer.toString("base64");
     }
 
     const category = new Category({
@@ -25,19 +26,33 @@ router.post("/", upload.single("image"), async (req, res) => {
     await category.save();
     res.json(category);
   } catch (err) {
+    console.log("error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
+
 // Get All Categories (excluding soft deleted)
 router.get("/", async (req, res) => {
   try {
-    const categories = await Category.find({ isDeleted: false }).sort({ createdAt: -1 });
+    const categories = await Category.find().sort({ createdAt: -1 });
     res.json(categories);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+// GET /api/categories/user
+router.get("/user", async (req, res) => {
+  try {
+    const categories = await Category.find({ status: "active" })
+      .sort({ createdAt: -1 });
+    res.json(categories);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // Update Category (with optional new image)
 router.put("/:id", upload.single("image"), async (req, res) => {
@@ -46,8 +61,7 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     let updateData = { name, description };
 
     if (req.file) {
-      const file = fs.readFileSync(req.file.path);
-      updateData.image = file.toString("base64");
+      updateData.image = req.file.buffer.toString("base64"); // ✅ use buffer
     }
 
     const category = await Category.findByIdAndUpdate(
@@ -55,6 +69,9 @@ router.put("/:id", upload.single("image"), async (req, res) => {
       updateData,
       { new: true }
     );
+
+    if (!category) return res.status(404).json({ error: "Category not found" });
+
     res.json(category);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -62,14 +79,16 @@ router.put("/:id", upload.single("image"), async (req, res) => {
 });
 
 // Soft Delete Category
-router.delete("/:id", async (req, res) => {
+router.patch("/:id/status", async (req, res) => {
   try {
+    const { status } = req.body;
     const category = await Category.findByIdAndUpdate(
       req.params.id,
-      { isDeleted: true },
+      { status },
       { new: true }
     );
-    res.json({ message: "Category soft-deleted", category });
+    if (!category) return res.status(404).json({ error: "Category not found" });
+    res.json({ message: "Status updated", category });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
