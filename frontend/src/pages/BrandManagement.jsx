@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import {useAlert} from "../Component/AlertContext"
+import { useAlert } from "../Component/AlertContext";
 
-const API_BASE_URL = "http://localhost:5000/api/categories";
+const API_URL = "http://localhost:5000/api/brands";
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
@@ -21,96 +21,93 @@ function Modal({ isOpen, onClose, children }) {
   );
 }
 
-export default function CategoryManagement() {
-  const [categories, setCategories] = useState([]);
-  const [form, setForm] = useState({ name: "", description: "", image: null });
+export default function BrandManagement() {
+  const [brands, setBrands] = useState([]);
+  const [form, setForm] = useState({ name: "", image: null });
   const [existingImage, setExistingImage] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const { showAlert } = useAlert();
-  
 
   useEffect(() => {
-    fetchCategories();
+    fetchBrands();
   }, []);
 
-  const fetchCategories = async () => {
+  const fetchBrands = async () => {
     try {
-      const res = await axios.get(API_BASE_URL);
-      setCategories(res.data);
+      const res = await axios.get(API_URL);
+      setBrands(res.data);
     } catch (err) {
       console.error(err);
-      showAlert("❌ Error fetching categories");
+      showAlert("❌ Error fetching brands");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const formData = new FormData();
       formData.append("name", form.name);
-      formData.append("description", form.description);
       if (form.image) formData.append("image", form.image);
 
       if (editingId) {
-        await axios.put(`${API_BASE_URL}/${editingId}`, formData, {
+        await axios.put(`${API_URL}/${editingId}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        showAlert("✅ Category updated!");
+        showAlert("✅ Brand updated!");
       } else {
-        await axios.post(API_BASE_URL, formData, {
+        await axios.post(API_URL, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        showAlert("✅ Category added!");
+        showAlert("✅ Brand added!");
       }
 
-      fetchCategories();
+      fetchBrands();
       resetForm();
     } catch (err) {
       console.error(err);
-      showAlert("❌ Error saving category");
+      showAlert("❌ Error saving brand");
     }
   };
 
-  const handleEdit = (cat) => {
-    setForm({ name: cat.name, description: cat.description || "", image: null });
-    setExistingImage(cat.image || null);
-    setEditingId(cat._id);
+  const handleEdit = (brand) => {
+    setForm({ name: brand.name, image: null });
+    setExistingImage(brand.image || null);
+    setEditingId(brand._id);
     setShowModal(true);
   };
 
-  const handleToggleBlock = async (cat) => {
+  const handleToggleBlock = async (brand) => {
     try {
-      const newStatus = cat.status === "blocked" ? "active" : "blocked";
-      await axios.patch(`${API_BASE_URL}/${cat._id}/status`, { status: newStatus });
-      showAlert(`✅ Category ${newStatus === "blocked" ? "blocked" : "unblocked"}!`);
-      fetchCategories();
+      const newStatus = brand.status === "blocked" ? "active" : "blocked";
+      await axios.patch(`${API_URL}/${brand._id}/status`, { status: newStatus });
+      showAlert(`✅ Brand ${newStatus === "blocked" ? "blocked" : "unblocked"}!`);
+      fetchBrands();
     } catch (err) {
       console.error(err);
-      showAlert("❌ Error updating category status");
+      showAlert("❌ Error updating brand status");
     }
   };
 
   const resetForm = () => {
-    setForm({ name: "", description: "", image: null });
+    setForm({ name: "", image: null });
     setExistingImage(null);
     setEditingId(null);
     setShowModal(false);
   };
 
   // Pagination
-  const totalPages = Math.ceil(categories.length / itemsPerPage);
-  const paginatedCategories = categories.slice(
+  const totalPages = Math.ceil(brands.length / itemsPerPage);
+  const paginatedBrands = brands.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <h2 className="text-xl font-semibold mb-4">Manage Categories</h2>
+      <h2 className="text-xl font-semibold mb-4">Manage Brands</h2>
 
       <button
         onClick={() => {
@@ -119,50 +116,52 @@ export default function CategoryManagement() {
         }}
         className="px-4 py-2 bg-indigo-600 text-white rounded-lg mb-4"
       >
-        Add Category
+        Add Brand
       </button>
 
-      {/* Categories Table */}
+      {/* Brands Table */}
       <div className="overflow-x-auto">
         <table className="w-full border border-slate-200 rounded-lg">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-6 py-3 text-left">Image</th>
               <th className="px-6 py-3 text-left">Name</th>
-              <th className="px-6 py-3 text-left">Description</th>
               <th className="px-6 py-3 text-left">Status</th>
               <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {paginatedCategories.map((cat) => (
-              <tr key={cat._id}>
+            {paginatedBrands.map((brand) => (
+              <tr key={brand._id}>
                 <td className="px-6 py-3">
-                  {cat.image && (
+                  {brand.image && (
                     <img
-                      src={`data:image/jpeg;base64,${cat.image}`}
-                      alt={cat.name}
-                      className="w-12 h-12 object-cover rounded"
+                      src={`data:image/jpeg;base64,${brand.image}`}
+                      alt={brand.name}
+                      className="w-12 h-12 object-contain rounded"
                     />
                   )}
                 </td>
-                <td className="px-6 py-3">{cat.name}</td>
-                <td className="px-6 py-3">{cat.description || "—"}</td>
+                <td className="px-6 py-3">{brand.name}</td>
                 <td className="px-6 py-3">
-                  {cat.status === "blocked" ? "Blocked" : "Active"}
+                  {brand.status === "blocked" ? "Blocked" : "Active"}
                 </td>
                 <td className="px-6 py-3 text-right flex justify-end gap-3">
                   <button
-                    onClick={() => handleEdit(cat)}
+                    onClick={() => handleEdit(brand)}
                     className="text-indigo-600"
                   >
                     Edit
                   </button>
                   <button
-                    onClick={() => handleToggleBlock(cat)}
-                    className={cat.status === "blocked" ? "text-green-600" : "text-red-600"}
+                    onClick={() => handleToggleBlock(brand)}
+                    className={
+                      brand.status === "blocked"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }
                   >
-                    {cat.status === "blocked" ? "Unblock" : "Block"}
+                    {brand.status === "blocked" ? "Unblock" : "Block"}
                   </button>
                 </td>
               </tr>
@@ -191,23 +190,16 @@ export default function CategoryManagement() {
       {/* Modal for Add/Edit */}
       <Modal isOpen={showModal} onClose={resetForm}>
         <h2 className="text-xl font-semibold mb-4">
-          {editingId ? "Edit Category" : "Add Category"}
+          {editingId ? "Edit Brand" : "Add Brand"}
         </h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
             type="text"
-            placeholder="Category name"
+            placeholder="Brand name"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="border rounded-lg px-3 py-2"
             required
-          />
-          <input
-            type="text"
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="border rounded-lg px-3 py-2"
           />
           <input
             type="file"
@@ -217,14 +209,12 @@ export default function CategoryManagement() {
           />
           {/* Preview Image */}
           {form.image ? (
-            // If new image selected
             <img
               src={URL.createObjectURL(form.image)}
               alt="preview"
               className="w-20 h-20 object-cover rounded mt-2"
             />
           ) : existingImage ? (
-            // If editing and old image exists
             <img
               src={`data:image/jpeg;base64,${existingImage}`}
               alt="current"

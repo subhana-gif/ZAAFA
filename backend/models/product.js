@@ -1,4 +1,3 @@
-// models/product.js
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema(
@@ -7,17 +6,17 @@ const productSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     description: String,
     images: {
-      type: [String],
-      validate: {
-        validator: function (arr) {
-          return arr.length === 4; // must be exactly 4 images
-        },
-        message: "Product must have exactly 4 images",
-      },
+      type: [String], 
       required: true,
     },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
-    status: { type: String, enum: ["active", "blocked"], default: "active" },
+    brand: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
+    offer: { type: mongoose.Schema.Types.ObjectId, ref: "Offer", default: null },
+    status: {
+      type: String,
+      enum: ["active", "blocked"],
+      default: "active",
+    },
   },
   { timestamps: true }
 );

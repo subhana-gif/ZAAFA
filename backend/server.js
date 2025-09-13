@@ -9,7 +9,8 @@ import { fileURLToPath } from "url";
 import searchRoutes from "./routes/searchRoutes.js"
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js"
-
+import brandRoutes from "./routes/brandRoutes.js";
+import offerRoutes from "./routes/offerRoutes.js"
 
 dotenv.config();
 const app = express();
@@ -21,6 +22,7 @@ const __dirname = path.dirname(__filename);
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Serve images
 app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
@@ -29,6 +31,8 @@ app.use("/uploads", express.static(path.join(process.cwd(), "public/uploads")));
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/brands", brandRoutes);
+app.use("/api/offers",offerRoutes)
 
 // Handle unknown routes with 404 JSON response
 app.use((req, res) => {

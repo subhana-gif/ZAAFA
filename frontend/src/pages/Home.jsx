@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = "https://zaafa-backend.onrender.com/api";
+const API_BASE_URL = "http://localhost:5000/api";
 
 export default function HomePage() {
   const navigate = useNavigate();

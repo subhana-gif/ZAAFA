@@ -1,17 +1,18 @@
 import express from "express";
 import Product from "../models/product.js";
 import upload from "../middleware/upload.js";
+import fs from "fs";
 
 const router = express.Router();
 
 // Create product
 router.post("/", upload.array("images", 4), async (req, res) => {
   try {
-    const { name, price, description, categoryId } = req.body;
+    const { name, price, description, categoryId, offerId, brandId } = req.body;
 
     let imageBase64Array = [];
     if (req.files && req.files.length > 0) {
-      imageBase64Array = req.files.map((file) => file.buffer.toString("base64"));
+      imageBase64Array = req.files.map(file => file.buffer.toString("base64"));
     }
 
     const newProduct = new Product({
@@ -20,21 +21,28 @@ router.post("/", upload.array("images", 4), async (req, res) => {
       description,
       images: imageBase64Array,
       category: categoryId || null,
+      offer: offerId || null,
+      brand: brandId || null,
       status: "active",
     });
 
     await newProduct.save();
-    res.json(newProduct);
+    // Populate for response
+    const populatedProduct = await Product.findById(newProduct._id)
+      .populate("category")
+      .populate("offer")
+      .populate("brand");
+
+    res.json(populatedProduct);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-
-// Get all products
+// Get all products (admin)
 router.get("/", async (req, res) => {
   try {
-    let { limit = 12, page = 1, category, search,status } = req.query;
+    let { limit = 12, page = 1, category, search, status } = req.query;
     limit = parseInt(limit);
     page = parseInt(page);
 
@@ -50,6 +58,8 @@ router.get("/", async (req, res) => {
       .skip((page - 1) * limit)
       .limit(limit)
       .populate("category")
+      .populate("offer")
+      .populate("brand")
       .lean();
 
     res.json({
@@ -61,34 +71,40 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /api/products/user
+// Get all active products for users
 router.get("/user", async (req, res) => {
   try {
     let { limit = 12, page = 1, category, search } = req.query;
     limit = parseInt(limit);
     page = parseInt(page);
 
-    // Build filter for products
-    const productFilter = { status: "active" }; // only active products
-    if (category) productFilter.category = category;
-    if (search) productFilter.name = { $regex: search, $options: "i" };
+    const filter = { status: "active" };
+    if (category) filter.category = category;
+    if (search) filter.name = { $regex: search, $options: "i" };
 
-    // Count total active products
-    const total = await Product.countDocuments(productFilter);
+    const total = await Product.countDocuments(filter);
 
-    // Fetch products with active category
-    const products = await Product.find(productFilter)
+    const products = await Product.find(filter)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .populate({
         path: "category",
-        match: { status: "active" }, // ✅ only populate active categories
+        match: { status: "active" },
+      })
+      .populate({
+        path: "offer",
+        match: { status: "active" },
+      })
+      .populate({
+        path: "brand",
+        match: { status: "active" },
       })
       .lean();
 
-    // Remove products with null category (category was blocked)
-    const filteredProducts = products.filter(p => p.category !== null);
+    const filteredProducts = products.filter(
+      p => p.category !== null && p.brand !== null
+    );
 
     res.json({
       products: filteredProducts,
@@ -104,6 +120,8 @@ router.get("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate("category")
+      .populate("offer")
+      .populate("brand")
       .lean();
 
     if (!product) return res.status(404).json({ error: "Product not found" });
@@ -117,7 +135,7 @@ router.get("/:id", async (req, res) => {
 // Update product
 router.put("/:id", upload.array("newFiles", 4), async (req, res) => {
   try {
-    const { name, price, description, categoryId } = req.body;
+    const { name, price, description, categoryId, offerId, brandId } = req.body;
 
     // existingImages sent from frontend
     let updatedImages = req.body.existingImages || [];
@@ -136,7 +154,9 @@ router.put("/:id", upload.array("newFiles", 4), async (req, res) => {
       name,
       price,
       description,
-      category: categoryId,
+      category: categoryId || null,
+      offer: offerId || null,
+      brand: brandId || null,
       images: updatedImages,
     };
 
@@ -144,7 +164,10 @@ router.put("/:id", upload.array("newFiles", 4), async (req, res) => {
       req.params.id,
       updateData,
       { new: true }
-    ).populate("category");
+    )
+      .populate("category")
+      .populate("offer")
+      .populate("brand");
 
     res.json(updatedProduct);
   } catch (err) {
@@ -162,7 +185,10 @@ router.patch("/:id/status", async (req, res) => {
       req.params.id,
       { status },
       { new: true }
-    );
+    )
+      .populate("category")
+      .populate("offer")
+      .populate("brand");
 
     if (!updatedProduct) return res.status(404).json({ error: "Product not found" });
 

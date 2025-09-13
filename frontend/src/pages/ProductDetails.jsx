@@ -3,7 +3,7 @@ import { useLocation, useParams } from "react-router-dom";
 import { MessageCircle, ArrowLeft } from "lucide-react";
 
 const ownerNumber = "7736062779";
-const API_BASE_URL = "https://zaafa-backend.onrender.com/api";
+const API_BASE_URL = "http://localhost:5000/api";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -69,7 +69,7 @@ export default function ProductDetailPage() {
     base64String ? `data:image/jpeg;base64,${base64String}` : null;
 
 const handleBuyOnWhatsApp = (product) => {
-  const productUrl = `https://zaafa.vercel.app/product/${product._id}`;
+  const productUrl = `http://localhost:5132/product/${product._id}`;
   const message = `Hello, I want to buy:\n\n${product.name}\nPrice: AED  ${product.price}\n\nCheck it here: ${productUrl}`;
   const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(message)}`;
   window.open(whatsappUrl, "_blank");

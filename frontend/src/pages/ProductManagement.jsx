@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import CropModal from "../Component/Cropper"; 
-import {useAlert} from "../Component/AlertContext"
+import CropModal from "../Component/Cropper";
+import { useAlert } from "../Component/AlertContext";
 
-
-const PRODUCT_API = "https://zaafa-backend.onrender.com/api/products";
-const CATEGORY_API = "https://zaafa-backend.onrender.com/api/categories";
+const PRODUCT_API = "http://localhost:5000/api/products";
+const CATEGORY_API = "http://localhost:5000/api/categories";
+const OFFER_API = "http://localhost:5000/api/offers";
+const BRAND_API = "http://localhost:5000/api/brands";
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
@@ -27,14 +28,18 @@ function Modal({ isOpen, onClose, children }) {
 export default function ProductManagement() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [offers, setOffers] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [form, setForm] = useState({
     name: "",
     price: "",
     description: "",
     category: "",
+    offer: "",
+    brand: "",
     existingImages: [],
   });
-  const [images, setImages] = useState([]); // new images
+  const [images, setImages] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,8 +48,8 @@ export default function ProductManagement() {
   const { showAlert } = useAlert();
 
   // crop modal
-  const [cropImageFile, setCropImageFile] = useState(null); // File/Blob to crop
-  const [cropReplaceIndex, setCropReplaceIndex] = useState(null); // existing image index, null for new image
+  const [cropImageFile, setCropImageFile] = useState(null);
+  const [cropReplaceIndex, setCropReplaceIndex] = useState(null);
 
   // pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,6 +58,8 @@ export default function ProductManagement() {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchOffers();
+    fetchBrands();
   }, []);
 
   const fetchProducts = async () => {
@@ -78,6 +85,26 @@ export default function ProductManagement() {
     }
   };
 
+  const fetchOffers = async () => {
+    try {
+      const res = await axios.get(OFFER_API);
+      setOffers(res.data);
+    } catch (err) {
+      console.error(err);
+      showAlert("❌ Error fetching offers");
+    }
+  };
+
+  const fetchBrands = async () => {
+    try {
+      const res = await axios.get(BRAND_API);
+      setBrands(res.data);
+    } catch (err) {
+      console.error(err);
+      showAlert("❌ Error fetching brands");
+    }
+  };
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -88,6 +115,8 @@ export default function ProductManagement() {
       price: "",
       description: "",
       category: "",
+      offer: "",
+      brand: "",
       existingImages: [],
     });
     setImages([]);
@@ -110,13 +139,13 @@ export default function ProductManagement() {
     data.append("price", form.price);
     data.append("description", form.description);
     if (form.category) data.append("categoryId", form.category);
+    if (form.offer) data.append("offerId", form.offer);
+    if (form.brand) data.append("brandId", form.brand);
 
-    // existing images as base64
     (form.existingImages || []).forEach((imgBase64, idx) => {
       data.append(`existingImages[${idx}]`, imgBase64);
     });
 
-    // new images as File/Blob
     images.forEach((fileOrBlob) => {
       data.append("images", fileOrBlob);
     });
@@ -150,6 +179,8 @@ export default function ProductManagement() {
       price: product.price.toString(),
       description: product.description || "",
       category: product.category?._id || "",
+      offer: product.offer?._id || "",
+      brand: product.brand?._id || "",
       existingImages: product.images || [],
     });
     setEditingId(product._id);
@@ -218,6 +249,8 @@ export default function ProductManagement() {
               <th className="px-6 py-4 text-left">Image</th>
               <th className="px-6 py-4 text-left">Product</th>
               <th className="px-6 py-4 text-left">Category</th>
+              <th className="px-6 py-4 text-left">Brand</th>
+              <th className="px-6 py-4 text-left">Offer</th>
               <th className="px-6 py-4 text-left">Price</th>
               <th className="px-6 py-4 text-left">Description</th>
               <th className="px-6 py-4 text-left">Status</th>
@@ -240,7 +273,9 @@ export default function ProductManagement() {
                 </td>
                 <td className="px-6 py-4">{product.name}</td>
                 <td className="px-6 py-4">{product.category?.name || "—"}</td>
-                <td className="px-6 py-4">AED  {product.price.toFixed(2)}</td>
+                <td className="px-6 py-4">{product.brand?.name || "—"}</td>
+                <td className="px-6 py-4">{product.offer?.title || "—"}</td>
+                <td className="px-6 py-4">AED {product.price.toFixed(2)}</td>
                 <td className="px-6 py-4">{product.description || "—"}</td>
                 <td className="px-6 py-4">
                   {product.status === "blocked" ? "Blocked" : "Active"}
@@ -254,10 +289,7 @@ export default function ProductManagement() {
                   </button>
                   <button
                     onClick={() =>
-                      handleToggleBlock(
-                        product._id,
-                        product.status === "blocked"
-                      )
+                      handleToggleBlock(product._id, product.status === "blocked")
                     }
                     className={`${
                       product.status === "blocked"
@@ -349,6 +381,47 @@ export default function ProductManagement() {
               </select>
             </div>
 
+            {/* Brand */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Brand *
+              </label>
+              <select
+                name="brand"
+                value={form.brand}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="">-- Select Brand --</option>
+                {brands.map((brand) => (
+                  <option key={brand._id} value={brand._id}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Offer (Optional) */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Offer (Optional)
+              </label>
+              <select
+                name="offer"
+                value={form.offer}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border rounded-lg"
+              >
+                <option value="">-- No Offer --</option>
+                {offers.map((offer) => (
+                  <option key={offer._id} value={offer._id}>
+                    {offer.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Description */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -412,24 +485,24 @@ export default function ProductManagement() {
               {/* New Images */}
               {images.length > 0 && (
                 <div className="flex gap-3 mt-3 flex-wrap">
-{images.map((file, idx) => (
-  <div key={idx} className="relative">
-    <img
-      src={URL.createObjectURL(file)}
-      alt="preview"
-      className="h-16 w-16 object-cover rounded"
-    />
-    <span
-      onClick={() => {
-        const newFiles = images.filter((_, i) => i !== idx);
-        setImages(newFiles);
-      }}
-      className="absolute top-0 right-0 bg-red-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs cursor-pointer"
-    >
-      ✕
-    </span>
-  </div>
-))}
+                  {images.map((file, idx) => (
+                    <div key={idx} className="relative">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt="preview"
+                        className="h-16 w-16 object-cover rounded"
+                      />
+                      <span
+                        onClick={() => {
+                          const newFiles = images.filter((_, i) => i !== idx);
+                          setImages(newFiles);
+                        }}
+                        className="absolute top-0 right-0 bg-red-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs cursor-pointer"
+                      >
+                        ✕
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -442,7 +515,7 @@ export default function ProductManagement() {
                   if (!file) return;
 
                   setCropImageFile(file);
-                  setCropReplaceIndex(null); // null = new image
+                  setCropReplaceIndex(null);
                 }}
                 className="w-full px-3 py-2 border rounded-lg mt-3"
               />
@@ -475,33 +548,34 @@ export default function ProductManagement() {
 
       {/* Crop Modal */}
       {cropImageFile && (
-<CropModal
-  isOpen={!!cropImageFile}
-  imageFile={cropImageFile}
-  onClose={() => {
-    setCropImageFile(null);
-    setCropReplaceIndex(null);
-  }}
-  onCropComplete={async (blob) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result.split(",")[1];
-if (cropReplaceIndex !== null && cropReplaceIndex < form.existingImages.length) {
-  // Replace existing image
-  const newImages = [...form.existingImages];
-  newImages[cropReplaceIndex] = base64String;
-  setForm({ ...form, existingImages: newImages });
-} else {
-  // Add new image
-  setImages([...images, blob]); // store blob in images array for new uploads
-}
+        <CropModal
+          isOpen={!!cropImageFile}
+          imageFile={cropImageFile}
+          onClose={() => {
+            setCropImageFile(null);
+            setCropReplaceIndex(null);
+          }}
+          onCropComplete={async (blob) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64String = reader.result.split(",")[1];
+              if (
+                cropReplaceIndex !== null &&
+                cropReplaceIndex < form.existingImages.length
+              ) {
+                const newImages = [...form.existingImages];
+                newImages[cropReplaceIndex] = base64String;
+                setForm({ ...form, existingImages: newImages });
+              } else {
+                setImages([...images, blob]);
+              }
 
-setCropImageFile(null);
-setCropReplaceIndex(null);
-    };
-    reader.readAsDataURL(blob);
-  }}
-/>
+              setCropImageFile(null);
+              setCropReplaceIndex(null);
+            };
+            reader.readAsDataURL(blob);
+          }}
+        />
       )}
     </div>
   );
