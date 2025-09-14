@@ -94,7 +94,7 @@ export default function ProductDetailPage() {
     base64String ? `data:image/jpeg;base64,${base64String}` : null;
 
   const handleBuyOnWhatsApp = (product) => {
-    const productUrl = `http://localhost:5132/product/${product._id}`;
+    const productUrl = `https://zaafa.vercel.app/product/${product._id}`;
     const message = `Hello, I want to buy:\n\n${product.name}\nPrice: AED ${properPrice.toFixed(
       0
     )}\n\nCheck it here: ${productUrl}`;
