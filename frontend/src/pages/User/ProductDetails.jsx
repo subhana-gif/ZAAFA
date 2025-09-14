@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { MessageCircle, ArrowLeft } from "lucide-react";
+import { MessageCircle } from "lucide-react";
+import Footer from "./footer";
 
 const ownerNumber = "7736062779";
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "https://zaafa-backend.onrender.com/api";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -15,7 +16,13 @@ export default function ProductDetailPage() {
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
 
-  const [zoomStyle, setZoomStyle] = useState({ transformOrigin: "center" });
+  const [zoomStyle, setZoomStyle] = useState({
+    transformOrigin: "center",
+    transform: "scale(1)",
+  });
+
+  // For pinch zoom
+  const [lastDistance, setLastDistance] = useState(null);
 
   useEffect(() => {
     if (!product && id) {
@@ -65,15 +72,37 @@ export default function ProductDetailPage() {
     }
   };
 
+  // Price handling with offers
+  const properPrice = (() => {
+    if (!product || !product.offer) return product?.price || 0;
+
+    const { price, offer } = product;
+
+    if (!offer.isActive) return price;
+
+    switch (offer.discountType) {
+      case "fixed":
+        return price - (offer.discountValue || 0);
+      case "percentage":
+        return price - ((offer.discountValue || 0) / 100) * price;
+      default:
+        return price;
+    }
+  })();
+
   const getImageUrl = (base64String) =>
     base64String ? `data:image/jpeg;base64,${base64String}` : null;
 
-const handleBuyOnWhatsApp = (product) => {
-  const productUrl = `http://localhost:5132/product/${product._id}`;
-  const message = `Hello, I want to buy:\n\n${product.name}\nPrice: AED  ${product.price}\n\nCheck it here: ${productUrl}`;
-  const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(message)}`;
-  window.open(whatsappUrl, "_blank");
-};
+  const handleBuyOnWhatsApp = (product) => {
+    const productUrl = `http://localhost:5132/product/${product._id}`;
+    const message = `Hello, I want to buy:\n\n${product.name}\nPrice: AED ${properPrice.toFixed(
+      0
+    )}\n\nCheck it here: ${productUrl}`;
+    const whatsappUrl = `https://wa.me/${ownerNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(whatsappUrl, "_blank");
+  };
 
   const goToProductDetail = (p) => {
     window.scrollTo(0, 0);
@@ -81,18 +110,58 @@ const handleBuyOnWhatsApp = (product) => {
     setRelatedProducts([]);
   };
 
+  // Desktop hover zoom
   const handleMouseMove = (e) => {
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
     const x = ((e.pageX - left) / width) * 100;
     const y = ((e.pageY - top) / height) * 100;
     setZoomStyle({
       transformOrigin: `${x}% ${y}%`,
-      transform: "scale(2)", // zoom level
+      transform: "scale(2)",
     });
   };
 
   const handleMouseLeave = () => {
     setZoomStyle({ transformOrigin: "center", transform: "scale(1)" });
+  };
+
+  // Mobile pinch zoom
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const distance = getDistance(e.touches[0], e.touches[1]);
+      setLastDistance(distance);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && lastDistance) {
+      const newDistance = getDistance(e.touches[0], e.touches[1]);
+      let scale = newDistance / lastDistance;
+
+      const currentScale =
+        parseFloat(
+          zoomStyle.transform.replace("scale(", "").replace(")", "")
+        ) || 1;
+
+      let nextScale = Math.min(3, Math.max(1, currentScale * scale));
+
+      setZoomStyle({
+        transformOrigin: "center",
+        transform: `scale(${nextScale})`,
+      });
+
+      setLastDistance(newDistance);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setLastDistance(null);
+  };
+
+  const getDistance = (touch1, touch2) => {
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
   };
 
   if (loading) {
@@ -132,7 +201,7 @@ const handleBuyOnWhatsApp = (product) => {
             {/* Product Images */}
             <div className="flex gap-4">
               {/* Thumbnails */}
-              <div className="flex flex-col gap-3 w-20">
+              <div className="flex flex-col gap-3">
                 {product.images?.map((img, idx) => (
                   <img
                     key={idx}
@@ -150,19 +219,23 @@ const handleBuyOnWhatsApp = (product) => {
 
               {/* Main Image with Smart Zoom */}
               <div
-                className="flex-1 relative overflow-hidden rounded-xl shadow-lg bg-gray-50"
+                className="flex-1 relative rounded-xl shadow-lg bg-gray-50 overflow-hidden touch-none"
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{ flexShrink: 0 }}
               >
                 {selectedImage ? (
                   <img
                     src={getImageUrl(selectedImage)}
                     alt={product.name}
-                    className="w-full h-96 lg:h-[500px] object-cover transition-transform duration-300"
+                    className="w-full h-[600px] object-cover transition-transform duration-150"
                     style={zoomStyle}
                   />
                 ) : (
-                  <div className="w-full h-96 lg:h-[500px] bg-yellow-100 flex items-center justify-center">
+                  <div className="w-full h-[600px] bg-yellow-100 flex items-center justify-center">
                     <span className="text-yellow-600 text-6xl font-bold">
                       {product.name.charAt(0)}
                     </span>
@@ -178,20 +251,18 @@ const handleBuyOnWhatsApp = (product) => {
                   {product.name}
                 </h1>
                 <div className="text-4xl font-bold text-yellow-600 mb-6">
-                  AED  {product.price}
+                  {product.offer ? (
+                    <>
+                      <span className="line-through mr-2">
+                        AED {product.price}
+                      </span>
+                      <span>AED {properPrice.toFixed(0)}</span>
+                    </>
+                  ) : (
+                    <>AED {properPrice.toFixed(0)}</>
+                  )}
                 </div>
               </div>
-
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Description
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {product.description ||
-                    "No description available for this product."}
-                </p>
-              </div>
-
               {product.category && (
                 <div>
                   <span className="inline-block px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg font-medium">
@@ -210,13 +281,17 @@ const handleBuyOnWhatsApp = (product) => {
                   Buy Now on WhatsApp
                 </button>
 
-                <button
-                  onClick={() => window.history.back()}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-8 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to Products
-                </button>
+                {product.description ? (
+                  <ul className="list-disc list-inside text-gray-600 leading-relaxed space-y-1">
+                    {product.description.split("\n").map((line, index) => (
+                      <li key={index}>{line}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-600 leading-relaxed">
+                    No description available for this product.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -266,7 +341,7 @@ const handleBuyOnWhatsApp = (product) => {
                           {p.name}
                         </h4>
                         <p className="text-sm text-gray-500 mt-1">
-                          AED  {p.price}
+                          AED {p.price}
                         </p>
                       </div>
                     </div>
@@ -277,6 +352,7 @@ const handleBuyOnWhatsApp = (product) => {
           )}
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

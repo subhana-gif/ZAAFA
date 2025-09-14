@@ -37,11 +37,36 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET single Offer by ID
+// GET all offers (filter by isActive if query provided)
+router.get("/user", async (req, res) => {
+  try {
+    const { activeOnly } = req.query; // e.g., /api/offers?activeOnly=true
+
+    const query = activeOnly === "true" ? { isActive: true } : {};
+    const offers = await Offer.find(query);
+
+    res.json(offers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET single Offer by ID (only active if user mode)
 router.get("/:id", async (req, res) => {
   try {
-    const offer = await Offer.findById(req.params.id);
-    if (!offer) return res.status(404).json({ message: "Offer not found" });
+    const { activeOnly } = req.query; // e.g., /api/offers/123?activeOnly=true
+
+    const query = { _id: req.params.id };
+    if (activeOnly === "true") {
+      query.isActive = true; // only return active
+    }
+
+    const offer = await Offer.findOne(query);
+
+    if (!offer) {
+      return res.status(404).json({ message: "Offer not found or inactive" });
+    }
+
     res.json(offer);
   } catch (err) {
     res.status(500).json({ error: err.message });

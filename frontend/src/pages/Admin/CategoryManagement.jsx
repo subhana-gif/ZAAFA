@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useAlert } from "../Component/AlertContext";
+import {useAlert} from "../../Component/AlertContext"
 
-const API_BASE_URL = "http://localhost:5000/api/offers";
+const API_BASE_URL = "https://zaafa-backend.onrender.com/api/categories";
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
@@ -21,33 +21,28 @@ function Modal({ isOpen, onClose, children }) {
   );
 }
 
-export default function OfferManagement() {
-  const [offers, setOffers] = useState([]);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    discountType: "percentage",
-    discountValue: "",
-    startDate: "",
-    endDate: "",
-  });
+export default function CategoryManagement() {
+  const [categories, setCategories] = useState([]);
+  const [form, setForm] = useState({ name: "", description: "", image: null });
+  const [existingImage, setExistingImage] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const { showAlert } = useAlert();
+  
 
   useEffect(() => {
-    fetchOffers();
+    fetchCategories();
   }, []);
 
-  const fetchOffers = async () => {
+  const fetchCategories = async () => {
     try {
       const res = await axios.get(API_BASE_URL);
-      setOffers(res.data);
+      setCategories(res.data);
     } catch (err) {
       console.error(err);
-      showAlert("❌ Error fetching offers");
+      showAlert("❌ Error fetching categories");
     }
   };
 
@@ -55,74 +50,67 @@ export default function OfferManagement() {
     e.preventDefault();
 
     try {
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("description", form.description);
+      if (form.image) formData.append("image", form.image);
+
       if (editingId) {
-        await axios.put(`${API_BASE_URL}/${editingId}`, form);
-        showAlert("✅ Offer updated!");
+        await axios.put(`${API_BASE_URL}/${editingId}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        showAlert("✅ Category updated!");
       } else {
-        await axios.post(API_BASE_URL, form);
-        showAlert("✅ Offer added!");
+        await axios.post(API_BASE_URL, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        showAlert("✅ Category added!");
       }
 
-      fetchOffers();
+      fetchCategories();
       resetForm();
     } catch (err) {
       console.error(err);
-      showAlert("❌ Error saving offer");
+      showAlert("❌ Error saving category");
     }
   };
 
-  const handleEdit = (offer) => {
-    setForm({
-      title: offer.title,
-      description: offer.description || "",
-      discountType: offer.discountType,
-      discountValue: offer.discountValue,
-      startDate: offer.startDate?.split("T")[0] || "",
-      endDate: offer.endDate?.split("T")[0] || "",
-    });
-    setEditingId(offer._id);
+  const handleEdit = (cat) => {
+    setForm({ name: cat.name, description: cat.description || "", image: null });
+    setExistingImage(cat.image || null);
+    setEditingId(cat._id);
     setShowModal(true);
   };
 
-  const handleToggleActive = async (offer) => {
+  const handleToggleBlock = async (cat) => {
     try {
-      const newStatus = !offer.isActive;
-      await axios.patch(`${API_BASE_URL}/${offer._id}/toggle`, {
-        isActive: newStatus,
-      });
-      showAlert(
-        `✅ Offer ${newStatus ? "activated" : "deactivated"} successfully`
-      );
-      fetchOffers();
+      const newStatus = cat.status === "blocked" ? "active" : "blocked";
+      await axios.patch(`${API_BASE_URL}/${cat._id}/status`, { status: newStatus });
+      showAlert(`✅ Category ${newStatus === "blocked" ? "blocked" : "unblocked"}!`);
+      fetchCategories();
     } catch (err) {
       console.error(err);
-      showAlert("❌ Error updating offer status");
+      showAlert("❌ Error updating category status");
     }
   };
 
   const resetForm = () => {
-    setForm({
-      title: "",
-      description: "",
-      discountType: "percentage",
-      discountValue: "",
-      startDate: "",
-      endDate: "",
-    });
+    setForm({ name: "", description: "", image: null });
+    setExistingImage(null);
     setEditingId(null);
     setShowModal(false);
   };
 
   // Pagination
-  const totalPages = Math.ceil(offers.length / itemsPerPage);
-  const paginatedOffers = offers.slice(
+  const totalPages = Math.ceil(categories.length / itemsPerPage);
+  const paginatedCategories = categories.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <h2 className="text-xl font-semibold mb-4">Manage Offers</h2>
+      <h2 className="text-xl font-semibold mb-4">Manage Categories</h2>
 
       <button
         onClick={() => {
@@ -131,49 +119,50 @@ export default function OfferManagement() {
         }}
         className="px-4 py-2 bg-indigo-600 text-white rounded-lg mb-4"
       >
-        Add Offer
+        Add Category
       </button>
 
-      {/* Offers Table */}
+      {/* Categories Table */}
       <div className="overflow-x-auto">
         <table className="w-full border border-slate-200 rounded-lg">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="px-6 py-3 text-left">Title</th>
-              <th className="px-6 py-3 text-left">Discount</th>
-              <th className="px-6 py-3 text-left">Validity</th>
+              <th className="px-6 py-3 text-left">Image</th>
+              <th className="px-6 py-3 text-left">Name</th>
+              <th className="px-6 py-3 text-left">Description</th>
               <th className="px-6 py-3 text-left">Status</th>
               <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {paginatedOffers.map((offer) => (
-              <tr key={offer._id}>
-                <td className="px-6 py-3">{offer.title}</td>
+            {paginatedCategories.map((cat) => (
+              <tr key={cat._id}>
                 <td className="px-6 py-3">
-                  {offer.discountType === "percentage"
-                    ? `${offer.discountValue}%`
-                    : `₹${offer.discountValue}`}
+                  {cat.image && (
+                    <img
+                      src={`data:image/jpeg;base64,${cat.image}`}
+                      alt={cat.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  )}
                 </td>
+                <td className="px-6 py-3">{cat.name}</td>
+                <td className="px-6 py-3">{cat.description || "—"}</td>
                 <td className="px-6 py-3">
-                  {new Date(offer.startDate).toLocaleDateString()} -{" "}
-                  {new Date(offer.endDate).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-3">
-                  {offer.isActive ? "Active" : "Inactive"}
+                  {cat.status === "blocked" ? "Blocked" : "Active"}
                 </td>
                 <td className="px-6 py-3 text-right flex justify-end gap-3">
                   <button
-                    onClick={() => handleEdit(offer)}
+                    onClick={() => handleEdit(cat)}
                     className="text-indigo-600"
                   >
                     Edit
                   </button>
                   <button
-                    onClick={() => handleToggleActive(offer)}
-                    className={offer.isActive ? "text-red-600" : "text-green-600"}
+                    onClick={() => handleToggleBlock(cat)}
+                    className={cat.status === "blocked" ? "text-green-600" : "text-red-600"}
                   >
-                    {offer.isActive ? "Deactivate" : "Activate"}
+                    {cat.status === "blocked" ? "Unblock" : "Block"}
                   </button>
                 </td>
               </tr>
@@ -202,53 +191,46 @@ export default function OfferManagement() {
       {/* Modal for Add/Edit */}
       <Modal isOpen={showModal} onClose={resetForm}>
         <h2 className="text-xl font-semibold mb-4">
-          {editingId ? "Edit Offer" : "Add Offer"}
+          {editingId ? "Edit Category" : "Add Category"}
         </h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
             type="text"
-            placeholder="Offer Title"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            placeholder="Category name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="border rounded-lg px-3 py-2"
             required
           />
-          <textarea
+          <input
+            type="text"
             placeholder="Description"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             className="border rounded-lg px-3 py-2"
           />
-          <select
-            value={form.discountType}
-            onChange={(e) => setForm({ ...form, discountType: e.target.value })}
-            className="border rounded-lg px-3 py-2"
-          >
-            <option value="percentage">Percentage</option>
-            <option value="flat">Flat</option>
-          </select>
           <input
-            type="number"
-            placeholder="Discount Value"
-            value={form.discountValue}
-            onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+            type="file"
+            accept="image/*"
+            onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
             className="border rounded-lg px-3 py-2"
-            required
           />
-          <input
-            type="date"
-            value={form.startDate}
-            onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-            className="border rounded-lg px-3 py-2"
-            required
-          />
-          <input
-            type="date"
-            value={form.endDate}
-            onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-            className="border rounded-lg px-3 py-2"
-            required
-          />
+          {/* Preview Image */}
+          {form.image ? (
+            // If new image selected
+            <img
+              src={URL.createObjectURL(form.image)}
+              alt="preview"
+              className="w-20 h-20 object-cover rounded mt-2"
+            />
+          ) : existingImage ? (
+            // If editing and old image exists
+            <img
+              src={`data:image/jpeg;base64,${existingImage}`}
+              alt="current"
+              className="w-20 h-20 object-cover rounded mt-2"
+            />
+          ) : null}
 
           <div className="flex gap-3 mt-4">
             <button

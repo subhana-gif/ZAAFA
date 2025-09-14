@@ -1,13 +1,10 @@
 // routes/brandRoutes.js
 import express from "express";
-import multer from "multer";
 import Brand from "../models/brands.js";
+import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
-// multer in-memory storage
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
 
 // CREATE Brand
 router.post("/", upload.single("image"), async (req, res) => {
@@ -42,6 +39,33 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+router.get("/user", async (req, res) => {
+  try {
+    const activeBrands = await Brand.find({ status: "active" });
+    res.json(activeBrands);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  try {
+    const brand = await Brand.findOne({
+      _id: req.params.id,
+      status: "active", // ✅ Only active brands
+    });
+
+    if (!brand) {
+      return res.status(404).json({ error: "Brand not found or inactive" });
+    }
+
+    res.json(brand);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // UPDATE Brand
 router.put("/:id", upload.single("image"), async (req, res) => {

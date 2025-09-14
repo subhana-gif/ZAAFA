@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import HeaderLayout from './pages/Header.jsx';
-import HomePage from './pages/Home.jsx';
-import ProductDetailPage from './pages/ProductDetails.jsx';
-import Admin from './pages/Admin';
+import HeaderLayout from './pages/User/Header.jsx';
+import HomePage from './pages/User/Home.jsx';
+import ProductDetailPage from './pages/User/ProductDetails.jsx';
+import Admin from './pages/Admin/Admin.jsx';
 
 export default function App() {
   return (

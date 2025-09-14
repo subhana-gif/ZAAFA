@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import CropModal from "../Component/Cropper";
-import { useAlert } from "../Component/AlertContext";
+import CropModal from "../../Component/Cropper";
+import { useAlert } from "../../Component/AlertContext";
 
-const PRODUCT_API = "http://localhost:5000/api/products";
-const CATEGORY_API = "http://localhost:5000/api/categories";
-const OFFER_API = "http://localhost:5000/api/offers";
-const BRAND_API = "http://localhost:5000/api/brands";
+const PRODUCT_API = "https://zaafa-backend.onrender.com/api/products";
+const CATEGORY_API = "https://zaafa-backend.onrender.com/api/categories";
+const OFFER_API = "https://zaafa-backend.onrender.com/api/offers";
+const BRAND_API = "https://zaafa-backend.onrender.com/api/brands";
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
@@ -126,11 +126,6 @@ export default function ProductManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if ((form.existingImages?.length || 0) + images.length !== 4) {
-      showAlert("Product must have exactly 4 images");
-      return;
-    }
 
     setLoading(true);
 

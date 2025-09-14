@@ -10,10 +10,8 @@ router.post("/", upload.array("images", 4), async (req, res) => {
   try {
     const { name, price, description, categoryId, offerId, brandId } = req.body;
 
-    let imageBase64Array = [];
-    if (req.files && req.files.length > 0) {
-      imageBase64Array = req.files.map(file => file.buffer.toString("base64"));
-    }
+    const imageBase64Array =
+      req.files?.map((file) => file.buffer.toString("base64")) || [];
 
     const newProduct = new Product({
       name,
@@ -27,7 +25,7 @@ router.post("/", upload.array("images", 4), async (req, res) => {
     });
 
     await newProduct.save();
-    // Populate for response
+
     const populatedProduct = await Product.findById(newProduct._id)
       .populate("category")
       .populate("offer")
@@ -71,15 +69,16 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get all active products for users
+// Get active products (user)
 router.get("/user", async (req, res) => {
   try {
-    let { limit = 12, page = 1, category, search } = req.query;
+    let { limit = 12, page = 1, category, brand, search } = req.query;
     limit = parseInt(limit);
     page = parseInt(page);
 
     const filter = { status: "active" };
     if (category) filter.category = category;
+    if (brand) filter.brand = brand; // ✅ filter by brand
     if (search) filter.name = { $regex: search, $options: "i" };
 
     const total = await Product.countDocuments(filter);
@@ -88,28 +87,16 @@ router.get("/user", async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate({
-        path: "category",
-        match: { status: "active" },
-      })
-      .populate({
-        path: "offer",
-        match: { status: "active" },
-      })
-      .populate({
-        path: "brand",
-        match: { status: "active" },
-      })
+      .populate("category")  // include category info
+      .populate("brand")  
+      .populate("offer")   // include brand info
       .lean();
-
-    const filteredProducts = products.filter(
-      p => p.category !== null && p.brand !== null
-    );
-
+    
     res.json({
-      products: filteredProducts,
+      products,
       totalPages: Math.ceil(total / limit),
     });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -136,13 +123,10 @@ router.get("/:id", async (req, res) => {
 router.put("/:id", upload.array("newFiles", 4), async (req, res) => {
   try {
     const { name, price, description, categoryId, offerId, brandId } = req.body;
-
-    // existingImages sent from frontend
     let updatedImages = req.body.existingImages || [];
 
-    // Convert uploaded files to base64
     if (req.files && req.files.length > 0) {
-      const uploadedImages = req.files.map(file =>
+      const uploadedImages = req.files.map((file) =>
         file.buffer
           ? file.buffer.toString("base64")
           : fs.readFileSync(file.path).toString("base64")
@@ -171,7 +155,6 @@ router.put("/:id", upload.array("newFiles", 4), async (req, res) => {
 
     res.json(updatedProduct);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -179,7 +162,7 @@ router.put("/:id", upload.array("newFiles", 4), async (req, res) => {
 // Block / Unblock product
 router.patch("/:id/status", async (req, res) => {
   try {
-    const { status } = req.body; // "active" or "blocked"
+    const { status } = req.body;
 
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
@@ -190,7 +173,8 @@ router.patch("/:id/status", async (req, res) => {
       .populate("offer")
       .populate("brand");
 
-    if (!updatedProduct) return res.status(404).json({ error: "Product not found" });
+    if (!updatedProduct)
+      return res.status(404).json({ error: "Product not found" });
 
     res.json(updatedProduct);
   } catch (err) {

@@ -3,16 +3,18 @@ import ProductManagement from "./ProductManagement";
 import CategoryManagement from "./CategoryManagement";
 import BrandManagement from "./BrandManagement";
 import OfferManagement from "./OfferManagement";
+import HeroImageManagement from "./HeroManagement";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("products"); // default tab
 
-  const tabs = [
-    { key: "products", label: "Product Management" },
-    { key: "categories", label: "Category Management" },
-    { key: "brands", label: "Brand Management" },
-    { key: "offers", label: "Offer Management" },
-  ];
+const tabs = [
+  { key: "products", label: "Product Management" },
+  { key: "categories", label: "Category Management" },
+  { key: "brands", label: "Brand Management" },
+  { key: "offers", label: "Offer Management" },
+  { key: "hero-images", label: "Hero Image Management" }, // new
+];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -24,7 +26,7 @@ export default function Admin() {
               Admin Dashboard
             </h1>
 
-            <div className="flex gap-3 flex-wrap">
+            <div className="flex gap-1 flex-wrap">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
@@ -49,6 +51,7 @@ export default function Admin() {
         {activeTab === "categories" && <CategoryManagement />}
         {activeTab === "brands" && <BrandManagement />}
         {activeTab === "offers" && <OfferManagement />}
+        {activeTab === "hero-images" && <HeroImageManagement />}
       </div>
     </div>
   );

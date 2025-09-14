@@ -11,6 +11,8 @@ import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js"
 import brandRoutes from "./routes/brandRoutes.js";
 import offerRoutes from "./routes/offerRoutes.js"
+import heroImageRoutes from "./routes/heroRoutes.js";
+
 
 dotenv.config();
 const app = express();
@@ -32,7 +34,9 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/brands", brandRoutes);
-app.use("/api/offers",offerRoutes)
+app.use("/api/offers",offerRoutes);
+app.use("/api/hero-images", heroImageRoutes);
+
 
 // Handle unknown routes with 404 JSON response
 app.use((req, res) => {
