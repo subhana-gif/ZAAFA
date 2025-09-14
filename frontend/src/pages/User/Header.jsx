@@ -23,7 +23,7 @@ export default function HeaderLayout({ children }) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("/api/categories");
+        const res = await fetch("https://zaafa-backend.onrender.com/api/categories");
         if (!res.ok) {
           console.error("Failed to fetch categories", res.status);
           return;
