@@ -5,10 +5,17 @@ import logo from "../../assets/484214536_457350320700957_1106175435430140761_n.j
 
 const ownerNumber = "7736062779";
 
-export default function HeaderLayout({ children }) {
+export default function HeaderLayout({ children,onCategorySelect  }) {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
+   const handleCategoryClick = (categoryId) => {
+    if (onCategorySelect) {
+      onCategorySelect(categoryId); // ✅ notify parent (HomePage)
+    }
+    setIsMobileMenuOpen(false);
+    setSuggestions({ categories: [], products: [] });
+  };
 
   const [categories, setCategories] = useState([]);
   const [suggestions, setSuggestions] = useState({ categories: [], products: [] });
@@ -18,12 +25,16 @@ export default function HeaderLayout({ children }) {
 
   const debounceRef = useRef(null);
   const searchRef = useRef(null);
+  const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : "https://zaafa-backend.onrender.com/api";
 
   // Fetch categories from backend
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("https://zaafa-backend.onrender.com/api/categories");
+        const res = await fetch(`${API_BASE_URL}/categories`);
         if (!res.ok) {
           console.error("Failed to fetch categories", res.status);
           return;
@@ -134,12 +145,6 @@ export default function HeaderLayout({ children }) {
     }
     // keep query visible after submit — remove the next line if you prefer clearing it
     // setSearchQuery("");
-  };
-
-  const handleCategoryClick = (categoryId) => {
-    navigate(`/products/${categoryId}`);
-    setIsMobileMenuOpen(false);
-    setSuggestions({ categories: [], products: [] });
   };
 
   const isHomePage = currentPath === "/";
@@ -273,7 +278,7 @@ export default function HeaderLayout({ children }) {
                 {categories.map((cat) => (
                   <span
                     key={cat.id}
-                    onClick={() => navigate(`/products/${cat.id}`)}
+                    onClick={() => handleCategoryClick(cat._id)} 
                     className="text-gray-700 hover:text-yellow-600 font-semibold cursor-pointer transition-colors text-lg md:text-xl lg:text-2xl font-serif"
                   >
                     {cat.name.toUpperCase()}

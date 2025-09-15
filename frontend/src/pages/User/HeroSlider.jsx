@@ -4,7 +4,10 @@ import { Navigation, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 
-const API_URL = "https://zaafa-backend.onrender.com/api/hero-images/user";
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api/hero-images/user"
+    : "https://zaafa-backend.onrender.com/api/hero-images/user";
 
 export default function HeroSlider() {
   const [images, setImages] = useState([]);

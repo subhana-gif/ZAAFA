@@ -3,10 +3,16 @@ import axios from "axios";
 import CropModal from "../../Component/Cropper";
 import { useAlert } from "../../Component/AlertContext";
 
-const PRODUCT_API = "https://zaafa-backend.onrender.com/api/products";
-const CATEGORY_API = "https://zaafa-backend.onrender.com/api/categories";
-const OFFER_API = "https://zaafa-backend.onrender.com/api/offers/user";
-const BRAND_API = "https://zaafa-backend.onrender.com/api/brands";
+const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api/"
+    : "https://zaafa-backend.onrender.com/api/";
+
+
+const PRODUCT_API = `${API_BASE_URL}/products`;
+const CATEGORY_API = `${API_BASE_URL}/categories`;
+const OFFER_API = `${API_BASE_URL}/offers/user`;
+const BRAND_API = `${API_BASE_URL}/brands`;
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;

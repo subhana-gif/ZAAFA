@@ -14,6 +14,10 @@ export default function ProductListPage({ categoryId, brandId }) {
   const [categories, setCategories] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : "https://zaafa-backend.onrender.com/api";
 
   const navigate = useNavigate();
 
@@ -29,12 +33,12 @@ export default function ProductListPage({ categoryId, brandId }) {
       if (categoryId && categoryId !== "all") {
         try {
           const categoryRes = await axios.get(
-            `https://zaafa-backend.onrender.com/api/categories/${categoryId}`
+            `${API_BASE_URL}/categories/${categoryId}`
           );
           setCategory(categoryRes.data);
 
           const brandsRes = await axios.get(
-            `https://zaafa-backend.onrender.com/api/brands/user?category=${categoryId}`
+            `${API_BASE_URL}/brands/user?category=${categoryId}`
           );
           setBrands(brandsRes.data || []);
         } catch (err) {
@@ -51,12 +55,12 @@ export default function ProductListPage({ categoryId, brandId }) {
       if (brandId && brandId !== "all") {
         try {
           const brandRes = await axios.get(
-            `https://zaafa-backend.onrender.com/api/brands/${brandId}`
+            `${API_BASE_URL}/brands/${brandId}`
           );
           setBrand(brandRes.data);
 
           const categoriesRes = await axios.get(
-            `https://zaafa-backend.onrender.com/api/categories/user?brand=${brandId}`
+            `${API_BASE_URL}/categories/user?brand=${brandId}`
           );
           setCategories(categoriesRes.data || []);
         } catch (err) {
@@ -86,7 +90,7 @@ export default function ProductListPage({ categoryId, brandId }) {
         if (selectedBrand && selectedBrand !== "all") params.brand = selectedBrand;
 
         const res = await axios.get(
-          "https://zaafa-backend.onrender.com/api/products/user",
+          "${API_BASE_URL}/products/user",
           { params }
         );
         setProducts(res.data.products || []);

@@ -4,8 +4,11 @@ import { MessageCircle } from "lucide-react";
 import Footer from "./footer";
 
 const ownerNumber = "7736062779";
-const API_BASE_URL = "https://zaafa-backend.onrender.com/api";
-
+const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : "https://zaafa-backend.onrender.com/api";
+    
 export default function ProductDetailPage() {
   const { id } = useParams();
   const location = useLocation();
@@ -21,7 +24,6 @@ export default function ProductDetailPage() {
     transform: "scale(1)",
   });
 
-  // For pinch zoom
   const [lastDistance, setLastDistance] = useState(null);
 
   useEffect(() => {
@@ -72,14 +74,10 @@ export default function ProductDetailPage() {
     }
   };
 
-  // Price handling with offers
   const properPrice = (() => {
     if (!product || !product.offer) return product?.price || 0;
-
     const { price, offer } = product;
-
     if (!offer.isActive) return price;
-
     switch (offer.discountType) {
       case "fixed":
         return price - (offer.discountValue || 0);
@@ -137,19 +135,15 @@ export default function ProductDetailPage() {
     if (e.touches.length === 2 && lastDistance) {
       const newDistance = getDistance(e.touches[0], e.touches[1]);
       let scale = newDistance / lastDistance;
-
       const currentScale =
         parseFloat(
           zoomStyle.transform.replace("scale(", "").replace(")", "")
         ) || 1;
-
       let nextScale = Math.min(3, Math.max(1, currentScale * scale));
-
       setZoomStyle({
         transformOrigin: "center",
         transform: `scale(${nextScale})`,
       });
-
       setLastDistance(newDistance);
     }
   };
@@ -194,55 +188,100 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Product Detail Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Product Images */}
-            <div className="flex gap-4">
-              {/* Thumbnails */}
-              <div className="flex flex-col gap-3">
-                {product.images?.map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={getImageUrl(img)}
-                    alt={`thumb-${idx}`}
-                    onClick={() => setSelectedImage(img)}
-                    className={`w-20 h-20 object-cover rounded-lg cursor-pointer border ${
-                      selectedImage === img
-                        ? "border-yellow-500 ring-2 ring-yellow-400"
-                        : "border-gray-200"
-                    }`}
-                  />
-                ))}
-              </div>
 
-              {/* Main Image with Smart Zoom */}
-              <div
-                className="flex-1 relative rounded-xl shadow-lg bg-gray-50 overflow-hidden touch-none"
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={{ flexShrink: 0 }}
-              >
-                {selectedImage ? (
-                  <img
-                    src={getImageUrl(selectedImage)}
-                    alt={product.name}
-                    className="w-full h-[600px] object-cover transition-transform duration-150"
-                    style={zoomStyle}
-                  />
-                ) : (
-                  <div className="w-full h-[600px] bg-yellow-100 flex items-center justify-center">
-                    <span className="text-yellow-600 text-6xl font-bold">
-                      {product.name.charAt(0)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+
+{/* ---------------- MOBILE VIEW ---------------- */}
+<div className="block lg:hidden w-full">
+  {/* Main Image */}
+  <div
+    className="relative rounded-xl shadow-lg bg-gray-50 overflow-hidden touch-none w-full"
+    onMouseMove={handleMouseMove}
+    onMouseLeave={handleMouseLeave}
+    onTouchStart={handleTouchStart}
+    onTouchMove={handleTouchMove}
+    onTouchEnd={handleTouchEnd}
+  >
+    {selectedImage ? (
+      <img
+        src={getImageUrl(selectedImage)}
+        alt={product.name}
+        className="w-full max-w-full h-[350px] object-contain transition-transform duration-150"
+        style={zoomStyle}
+      />
+    ) : (
+      <div className="w-full h-[350px] bg-yellow-100 flex items-center justify-center">
+        <span className="text-yellow-600 text-6xl font-bold">
+          {product.name.charAt(0)}
+        </span>
+      </div>
+    )}
+  </div>
+
+  {/* Thumbnails under main image - horizontal scroll */}
+  <div className="flex gap-3 mt-4 overflow-x-auto pb-2">
+    {product.images?.map((img, idx) => (
+      <img
+        key={idx}
+        src={getImageUrl(img)}
+        alt={`thumb-${idx}`}
+        onClick={() => setSelectedImage(img)}
+        className={`w-20 h-20 object-cover rounded-lg cursor-pointer flex-shrink-0 border ${
+          selectedImage === img
+            ? "border-yellow-500 ring-2 ring-yellow-400"
+            : "border-gray-200"
+        }`}
+      />
+    ))}
+  </div>
+</div>
+
+{/* ---------------- DESKTOP VIEW ---------------- */}
+<div className="hidden lg:flex gap-4">
+  {/* Thumbnails (left) */}
+  <div className="flex flex-col gap-3">
+    {product.images?.map((img, idx) => (
+      <img
+        key={idx}
+        src={getImageUrl(img)}
+        alt={`thumb-${idx}`}
+        onClick={() => setSelectedImage(img)}
+        className={`w-20 h-20 object-cover rounded-lg cursor-pointer border ${
+          selectedImage === img
+            ? "border-yellow-500 ring-2 ring-yellow-400"
+            : "border-gray-200"
+        }`}
+      />
+    ))}
+  </div>
+
+  {/* Main Image (right) */}
+  <div
+    className="flex-1 relative rounded-xl shadow-lg bg-gray-50 overflow-hidden touch-none"
+    onMouseMove={handleMouseMove}
+    onMouseLeave={handleMouseLeave}
+    onTouchStart={handleTouchStart}
+    onTouchMove={handleTouchMove}
+    onTouchEnd={handleTouchEnd}
+  >
+    {selectedImage ? (
+      <img
+        src={getImageUrl(selectedImage)}
+        alt={product.name}
+        className="w-full h-[600px] object-contain transition-transform duration-150"
+        style={zoomStyle}
+      />
+    ) : (
+      <div className="w-full h-[600px] bg-yellow-100 flex items-center justify-center">
+        <span className="text-yellow-600 text-6xl font-bold">
+          {product.name.charAt(0)}
+        </span>
+      </div>
+    )}
+  </div>
+</div>
 
             {/* Product Details */}
             <div className="space-y-6">
@@ -270,8 +309,6 @@ export default function ProductDetailPage() {
                   </span>
                 </div>
               )}
-
-              {/* Action Buttons */}
               <div className="space-y-4 pt-6">
                 <button
                   onClick={() => handleBuyOnWhatsApp(product)}
@@ -280,7 +317,6 @@ export default function ProductDetailPage() {
                   <MessageCircle className="h-5 w-5" />
                   Buy Now on WhatsApp
                 </button>
-
                 {product.description ? (
                   <ul className="list-disc list-inside text-gray-600 leading-relaxed space-y-1">
                     {product.description.split("\n").map((line, index) => (

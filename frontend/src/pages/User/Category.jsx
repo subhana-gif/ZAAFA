@@ -11,7 +11,10 @@ import "swiper/css/navigation";
 export default function CategoryCarousel({ onCategorySelect }) {
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
-  const API_URL = "https://zaafa-backend.onrender.com/api/categories/user"
+  const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api/categories/user"
+    : "https://zaafa-backend.onrender.com/api/categories/user";
   const prevRef = useRef(null);
   const nextRef = useRef(null);
 

@@ -6,11 +6,15 @@ import "swiper/css/navigation";
 
 export default function BrandCarousel({ onBrandSelect }) {
   const [brands, setBrands] = useState([]);
+  const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : "https://zaafa-backend.onrender.com/api";
 
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const res = await fetch("https://zaafa-backend.onrender.com/api/brands/user");
+        const res = await fetch(`${API_BASE_URL}/brands/user`);
         const data = await res.json();
         setBrands(data);
       } catch (err) {

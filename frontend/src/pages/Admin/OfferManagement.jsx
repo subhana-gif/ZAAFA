@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAlert } from "../../Component/AlertContext";
 
-const API_BASE_URL = "https://zaafa-backend.onrender.com/api/offers";
+const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api/offers"
+    : "https://zaafa-backend.onrender.com/api/offers";
+
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
