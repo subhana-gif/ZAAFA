@@ -9,10 +9,10 @@ const API_BASE_URL =
     : "https://zaafa-backend.onrender.com/api/";
 
 
-const PRODUCT_API = `${API_BASE_URL}/products`;
-const CATEGORY_API = `${API_BASE_URL}/categories`;
-const OFFER_API = `${API_BASE_URL}/offers/user`;
-const BRAND_API = `${API_BASE_URL}/brands`;
+const PRODUCT_API = `${API_BASE_URL}products`;
+const CATEGORY_API = `${API_BASE_URL}categories`;
+const OFFER_API = `${API_BASE_URL}offers/user`;
+const BRAND_API = `${API_BASE_URL}brands`;
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
