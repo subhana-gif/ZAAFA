@@ -293,7 +293,7 @@ export default function ProductDetailPage() {
                 <div className="text-4xl font-bold text-yellow-600 mb-6">
                   {product.offer ? (
                     <>
-                      <span className="line-through mr-2">
+                      <span className="line-through mr-2 text-gray-500">
                         AED {product.price}
                       </span>
                       <span>AED {properPrice.toFixed(0)}</span>
