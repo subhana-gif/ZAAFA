@@ -40,11 +40,7 @@ router.get("/", async (req, res) => {
 // GET all offers (filter by isActive if query provided)
 router.get("/user", async (req, res) => {
   try {
-    const { activeOnly } = req.query; // e.g., /api/offers?activeOnly=true
-
-    const query = activeOnly === "true" ? { isActive: true } : {};
-    const offers = await Offer.find(query);
-
+    const offers = await Offer.find({ isActive: true });
     res.json(offers);
   } catch (err) {
     res.status(500).json({ error: err.message });
