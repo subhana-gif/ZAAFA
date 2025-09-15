@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import {useAlert} from "../../Component/AlertContext"
+import { useAlert } from "../../Component/AlertContext";
 
 const API_BASE_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:5000/api/categories"
     : "https://zaafa-backend.onrender.com/api/categories";
-
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
@@ -32,9 +31,9 @@ export default function CategoryManagement() {
   const [editingId, setEditingId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState(""); // 🔍 search state
   const itemsPerPage = 5;
   const { showAlert } = useAlert();
-  
 
   useEffect(() => {
     fetchCategories();
@@ -52,7 +51,6 @@ export default function CategoryManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const formData = new FormData();
       formData.append("name", form.name);
@@ -75,7 +73,8 @@ export default function CategoryManagement() {
       resetForm();
     } catch (err) {
       console.error(err);
-      showAlert("❌ Error saving category");
+      const errorMessage = err.response?.data?.error || "Error saving category";
+      showAlert(`❌ ${errorMessage}`);
     }
   };
 
@@ -105,9 +104,16 @@ export default function CategoryManagement() {
     setShowModal(false);
   };
 
+  // 🔍 Filtered categories
+  const filteredCategories = categories.filter(
+    (cat) =>
+      cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (cat.description && cat.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   // Pagination
-  const totalPages = Math.ceil(categories.length / itemsPerPage);
-  const paginatedCategories = categories.slice(
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+  const paginatedCategories = filteredCategories.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -116,87 +122,104 @@ export default function CategoryManagement() {
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <h2 className="text-xl font-semibold mb-4">Manage Categories</h2>
 
-      <button
-        onClick={() => {
-          resetForm();
-          setShowModal(true);
-        }}
-        className="px-4 py-2 bg-indigo-600 text-white rounded-lg mb-4"
-      >
-        Add Category
-      </button>
+      {/* 🔍 Search + Add Button */}
+      <div className="flex justify-between items-center mb-4">
+        <input
+          type="text"
+          placeholder="Search categories..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+        />
+        <button
+          onClick={() => {
+            resetForm();
+            setShowModal(true);
+          }}
+          className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg"
+        >
+          Add Category
+        </button>
+      </div>
 
       {/* Categories Table */}
       <div className="overflow-x-auto">
         <table className="w-full border border-slate-200 rounded-lg">
-<thead className="bg-slate-50 border-b border-slate-200">
-  <tr>
-    <th className="px-6 py-3 text-left">Sl. No.</th>
-    <th className="px-6 py-3 text-left">Image</th>
-    <th className="px-6 py-3 text-left">Name</th>
-    <th className="px-6 py-3 text-left">Description</th>
-    <th className="px-6 py-3 text-left">Status</th>
-    <th className="px-6 py-3 text-right">Actions</th>
-  </tr>
-</thead>
-<tbody className="divide-y divide-slate-200">
-  {paginatedCategories.map((cat, index) => (
-    <tr key={cat._id}>
-      {/* Serial Number */}
-      <td className="px-6 py-3">
-        {(currentPage - 1) * itemsPerPage + index + 1}
-      </td>
-
-      <td className="px-6 py-3">
-        {cat.image && (
-          <img
-            src={`data:image/jpeg;base64,${cat.image}`}
-            alt={cat.name}
-            className="w-12 h-12 object-cover rounded"
-          />
-        )}
-      </td>
-      <td className="px-6 py-3">{cat.name}</td>
-      <td className="px-6 py-3">{cat.description || "—"}</td>
-      <td className="px-6 py-3">
-        {cat.status === "blocked" ? "Blocked" : "Active"}
-      </td>
-      <td className="px-6 py-3 text-right flex justify-end gap-3">
-        <button
-          onClick={() => handleEdit(cat)}
-          className="text-indigo-600"
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => handleToggleBlock(cat)}
-          className={cat.status === "blocked" ? "text-green-600" : "text-red-600"}
-        >
-          {cat.status === "blocked" ? "Unblock" : "Block"}
-        </button>
-      </td>
-    </tr>
-  ))}
-</tbody>
+          <thead className="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th className="px-6 py-3 text-left">Sl. No.</th>
+              <th className="px-6 py-3 text-left">Image</th>
+              <th className="px-6 py-3 text-left">Name</th>
+              <th className="px-6 py-3 text-left">Description</th>
+              <th className="px-6 py-3 text-left">Status</th>
+              <th className="px-6 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {paginatedCategories.map((cat, index) => (
+              <tr key={cat._id}>
+                <td className="px-6 py-3">
+                  {(currentPage - 1) * itemsPerPage + index + 1}
+                </td>
+                <td className="px-6 py-3">
+                  {cat.image && (
+                    <img
+                      src={`data:image/jpeg;base64,${cat.image}`}
+                      alt={cat.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  )}
+                </td>
+                <td className="px-6 py-3">{cat.name}</td>
+                <td className="px-6 py-3">{cat.description || "—"}</td>
+                <td className="px-6 py-3">
+                  {cat.status === "blocked" ? "Blocked" : "Active"}
+                </td>
+                <td className="px-6 py-3 text-right flex justify-end gap-3">
+                  <button onClick={() => handleEdit(cat)} className="text-indigo-600">
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleToggleBlock(cat)}
+                    className={cat.status === "blocked" ? "text-green-600" : "text-red-600"}
+                  >
+                    {cat.status === "blocked" ? "Unblock" : "Block"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {paginatedCategories.length === 0 && (
+              <tr>
+                <td colSpan="6" className="px-6 py-3 text-center text-gray-500">
+                  No categories found
+                </td>
+              </tr>
+            )}
+          </tbody>
         </table>
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-center gap-2 mt-4">
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrentPage(i + 1)}
-            className={`px-3 py-1 rounded-lg border ${
-              currentPage === i + 1
-                ? "bg-indigo-600 text-white"
-                : "bg-white text-gray-700"
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
-      </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-4">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 rounded-lg border ${
+                currentPage === i + 1
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-gray-700"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Modal for Add/Edit */}
       <Modal isOpen={showModal} onClose={resetForm}>
@@ -206,14 +229,13 @@ export default function CategoryManagement() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
             type="text"
-            placeholder="Category name"
+            placeholder="Category Name"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="border rounded-lg px-3 py-2"
             required
           />
-          <input
-            type="text"
+          <textarea
             placeholder="Description"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -225,22 +247,16 @@ export default function CategoryManagement() {
             onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
             className="border rounded-lg px-3 py-2"
           />
-          {/* Preview Image */}
-          {form.image ? (
-            // If new image selected
-            <img
-              src={URL.createObjectURL(form.image)}
-              alt="preview"
-              className="w-20 h-20 object-cover rounded mt-2"
-            />
-          ) : existingImage ? (
-            // If editing and old image exists
-            <img
-              src={`data:image/jpeg;base64,${existingImage}`}
-              alt="current"
-              className="w-20 h-20 object-cover rounded mt-2"
-            />
-          ) : null}
+          {existingImage && !form.image && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">Current Image:</p>
+              <img
+                src={`data:image/jpeg;base64,${existingImage}`}
+                alt="Category"
+                className="w-24 h-24 object-cover rounded mt-1"
+              />
+            </div>
+          )}
 
           <div className="flex gap-3 mt-4">
             <button

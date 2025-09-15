@@ -221,9 +221,11 @@ export default function ProductManagement() {
   }
 
   return (
-    <div>
-      {/* Search & Add Button */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex justify-between">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h2 className="text-xl font-semibold mb-4">Manage Products</h2>
+
+      {/* 🔍 Search + Add Button */}
+      <div className="flex justify-between items-center mb-4">
         <input
           type="text"
           placeholder="Search products..."
@@ -445,7 +447,7 @@ export default function ProductManagement() {
             {/* Images */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Product Images (exactly 4)
+                Product Images 
               </label>
 
               {/* Existing Images */}

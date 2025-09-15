@@ -10,11 +10,17 @@ router.post("/", upload.array("images", 4), async (req, res) => {
   try {
     const { name, price, description, categoryId, offerId, brandId } = req.body;
 
+    // ✅ Case-insensitive duplicate check
+    const existingProduct = await Product.findOne({ name: new RegExp(`^${name.trim()}$`, "i") });
+    if (existingProduct) {
+      return res.status(400).json({ error: "Product already exists" });
+    }
+
     const imageBase64Array =
       req.files?.map((file) => file.buffer.toString("base64")) || [];
 
     const newProduct = new Product({
-      name,
+      name: name.trim(),
       price,
       description,
       images: imageBase64Array,
@@ -33,7 +39,14 @@ router.post("/", upload.array("images", 4), async (req, res) => {
 
     res.json(populatedProduct);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error saving product:", err);
+
+    // ✅ Handle duplicate key error from DB
+    if (err.code === 11000) {
+      return res.status(400).json({ error: "Product already exists" });
+    }
+
+    res.status(500).json({ error: "Error saving product" });
   }
 });
 

@@ -6,19 +6,23 @@ import fs from "fs";
 const router = express.Router();
 
 // Create Category
-
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { name, description } = req.body;
     let imageBase64 = null;
 
-    // If using memoryStorage, the file buffer is already in req.file.buffer
+    // ✅ Case-insensitive check
+    const existingCategory = await Category.findOne({ name: new RegExp(`^${name.trim()}$`, "i") });
+    if (existingCategory) {
+      return res.status(400).json({ error: "Category already exists" });
+    }
+
     if (req.file) {
       imageBase64 = req.file.buffer.toString("base64");
     }
 
     const category = new Category({
-      name,
+      name: name.trim(),
       description,
       image: imageBase64
     });
@@ -27,7 +31,13 @@ router.post("/", upload.single("image"), async (req, res) => {
     res.json(category);
   } catch (err) {
     console.log("error:", err);
-    res.status(500).json({ error: err.message });
+
+    // ✅ Handle duplicate key error
+    if (err.code === 11000) {
+      return res.status(400).json({ error: "Category already exists" });
+    }
+
+    res.status(500).json({ error: "Error saving category" });
   }
 });
 

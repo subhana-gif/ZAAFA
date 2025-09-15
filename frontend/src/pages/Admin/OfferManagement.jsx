@@ -7,7 +7,6 @@ const API_BASE_URL =
     ? "http://localhost:5000/api/offers"
     : "https://zaafa-backend.onrender.com/api/offers";
 
-
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
   return (
@@ -41,6 +40,9 @@ export default function OfferManagement() {
   const itemsPerPage = 5;
   const { showAlert } = useAlert();
 
+  // 🔍 Search state
+  const [searchTerm, setSearchTerm] = useState("");
+
   useEffect(() => {
     fetchOffers();
   }, []);
@@ -71,7 +73,8 @@ export default function OfferManagement() {
       resetForm();
     } catch (err) {
       console.error(err);
-      showAlert("❌ Error saving offer");
+      const errorMessage = err.response?.data?.error || "Error saving offer";
+      showAlert(`❌ ${errorMessage}`);
     }
   };
 
@@ -117,9 +120,14 @@ export default function OfferManagement() {
     setShowModal(false);
   };
 
+  // 🔍 Filter offers by search term
+  const filteredOffers = offers.filter((offer) =>
+    offer.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Pagination
-  const totalPages = Math.ceil(offers.length / itemsPerPage);
-  const paginatedOffers = offers.slice(
+  const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);
+  const paginatedOffers = filteredOffers.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -128,65 +136,77 @@ export default function OfferManagement() {
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <h2 className="text-xl font-semibold mb-4">Manage Offers</h2>
 
-      <button
-        onClick={() => {
-          resetForm();
-          setShowModal(true);
-        }}
-        className="px-4 py-2 bg-indigo-600 text-white rounded-lg mb-4"
-      >
-        Add Offer
-      </button>
+      {/* 🔍 Search + Add Button */}
+      <div className="flex justify-between items-center mb-4">
+        <input
+          type="text"
+          placeholder="Search offers..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+        />
+        <button
+          onClick={() => {
+            resetForm();
+            setShowModal(true);
+          }}
+          className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg"
+        >
+          Add Offer
+        </button>
+      </div>
 
       {/* Offers Table */}
       <div className="overflow-x-auto">
         <table className="w-full border border-slate-200 rounded-lg">
-<thead className="bg-slate-50 border-b border-slate-200">
-  <tr>
-    <th className="px-6 py-3 text-left">Sl. No.</th>
-    <th className="px-6 py-3 text-left">Title</th>
-    <th className="px-6 py-3 text-left">Discount</th>
-    <th className="px-6 py-3 text-left">Validity</th>
-    <th className="px-6 py-3 text-left">Status</th>
-    <th className="px-6 py-3 text-right">Actions</th>
-  </tr>
-</thead>
-<tbody className="divide-y divide-slate-200">
-  {paginatedOffers.map((offer, index) => (
-    <tr key={offer._id}>
-      {/* Serial Number */}
-      <td className="px-6 py-3">
-        {(currentPage - 1) * itemsPerPage + index + 1}
-      </td>
+          <thead className="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th className="px-6 py-3 text-left">Sl. No.</th>
+              <th className="px-6 py-3 text-left">Title</th>
+              <th className="px-6 py-3 text-left">Discount</th>
+              <th className="px-6 py-3 text-left">Validity</th>
+              <th className="px-6 py-3 text-left">Status</th>
+              <th className="px-6 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {paginatedOffers.map((offer, index) => (
+              <tr key={offer._id}>
+                {/* Serial Number */}
+                <td className="px-6 py-3">
+                  {(currentPage - 1) * itemsPerPage + index + 1}
+                </td>
 
-      <td className="px-6 py-3">{offer.title}</td>
-      <td className="px-6 py-3">
-        {offer.discountType === "percentage"
-          ? `${offer.discountValue}%`
-          : `AED ${offer.discountValue}`}
-      </td>
-      <td className="px-6 py-3">
-        {new Date(offer.startDate).toLocaleDateString()} -{" "}
-        {new Date(offer.endDate).toLocaleDateString()}
-      </td>
-      <td className="px-6 py-3">{offer.isActive ? "Active" : "Inactive"}</td>
-      <td className="px-6 py-3 text-right flex justify-end gap-3">
-        <button
-          onClick={() => handleEdit(offer)}
-          className="text-indigo-600"
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => handleToggleActive(offer)}
-          className={offer.isActive ? "text-red-600" : "text-green-600"}
-        >
-          {offer.isActive ? "Deactivate" : "Activate"}
-        </button>
-      </td>
-    </tr>
-  ))}
-</tbody>
+                <td className="px-6 py-3">{offer.title}</td>
+                <td className="px-6 py-3">
+                  {offer.discountType === "percentage"
+                    ? `${offer.discountValue}%`
+                    : `AED ${offer.discountValue}`}
+                </td>
+                <td className="px-6 py-3">
+                  {new Date(offer.startDate).toLocaleDateString()} -{" "}
+                  {new Date(offer.endDate).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-3">
+                  {offer.isActive ? "Active" : "Inactive"}
+                </td>
+                <td className="px-6 py-3 text-right flex justify-end gap-3">
+                  <button
+                    onClick={() => handleEdit(offer)}
+                    className="text-indigo-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleToggleActive(offer)}
+                    className={offer.isActive ? "text-red-600" : "text-green-600"}
+                  >
+                    {offer.isActive ? "Deactivate" : "Activate"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
 

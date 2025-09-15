@@ -12,21 +12,33 @@ router.post("/", upload.single("image"), async (req, res) => {
     const { name } = req.body;
     let imageBase64 = null;
 
+    // ✅ Case-insensitive check with regex
+    const existingBrand = await Brand.findOne({ name: new RegExp(`^${name.trim()}$`, "i") });
+    if (existingBrand) {
+      return res.status(400).json({ error: "Brand already exists" });
+    }
+
     if (req.file) {
       imageBase64 = req.file.buffer.toString("base64");
     }
 
     const brand = new Brand({
-      name,
+      name: name.trim(),
       image: imageBase64,
-      status: "active", // default when creating
+      status: "active",
     });
 
     await brand.save();
     res.json(brand);
   } catch (err) {
     console.error("error:", err);
-    res.status(500).json({ error: err.message });
+
+    // ✅ Handle Mongo duplicate key error
+    if (err.code === 11000) {
+      return res.status(400).json({ error: "Brand already exists" });
+    }
+
+    res.status(500).json({ error: "Error saving brand" });
   }
 });
 

@@ -9,8 +9,14 @@ router.post("/", async (req, res) => {
   try {
     const { title, description, discountType, discountValue, startDate, endDate } = req.body;
 
+    // ✅ Case-insensitive check for duplicate title
+    const existingOffer = await Offer.findOne({ title: new RegExp(`^${title.trim()}$`, "i") });
+    if (existingOffer) {
+      return res.status(400).json({ error: "Offer already exists" });
+    }
+
     const offer = new Offer({
-      title,
+      title: title.trim(),
       description,
       discountType,
       discountValue,
@@ -23,7 +29,13 @@ router.post("/", async (req, res) => {
     res.json(offer);
   } catch (err) {
     console.error("Error creating offer:", err);
-    res.status(500).json({ error: err.message });
+
+    // ✅ Handle duplicate key error (if unique index exists in schema)
+    if (err.code === 11000) {
+      return res.status(400).json({ error: "Offer already exists" });
+    }
+
+    res.status(500).json({ error: "Error saving offer" });
   }
 });
 

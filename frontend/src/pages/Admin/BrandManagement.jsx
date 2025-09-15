@@ -30,6 +30,7 @@ export default function BrandManagement() {
   const [existingImage, setExistingImage] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const { showAlert } = useAlert();
@@ -71,7 +72,8 @@ export default function BrandManagement() {
       resetForm();
     } catch (err) {
       console.error(err);
-      showAlert("❌ Error saving brand");
+      const errorMessage = err.response?.data?.error || "Error saving brand";
+      showAlert(`❌ ${errorMessage}`);
     }
   };
 
@@ -86,7 +88,9 @@ export default function BrandManagement() {
     try {
       const newStatus = brand.status === "blocked" ? "active" : "blocked";
       await axios.patch(`${API_URL}/${brand._id}/status`, { status: newStatus });
-      showAlert(`✅ Brand ${newStatus === "blocked" ? "blocked" : "unblocked"}!`);
+      showAlert(
+        `✅ Brand ${newStatus === "blocked" ? "blocked" : "unblocked"}!`
+      );
       fetchBrands();
     } catch (err) {
       console.error(err);
@@ -101,9 +105,12 @@ export default function BrandManagement() {
     setShowModal(false);
   };
 
-  // Pagination
-  const totalPages = Math.ceil(brands.length / itemsPerPage);
-  const paginatedBrands = brands.slice(
+  // Filtered + paginated brands
+  const filteredBrands = brands.filter((brand) =>
+    brand.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredBrands.length / itemsPerPage);
+  const paginatedBrands = filteredBrands.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -112,70 +119,90 @@ export default function BrandManagement() {
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <h2 className="text-xl font-semibold mb-4">Manage Brands</h2>
 
-      <button
-        onClick={() => {
-          resetForm();
-          setShowModal(true);
-        }}
-        className="px-4 py-2 bg-indigo-600 text-white rounded-lg mb-4"
-      >
-        Add Brand
-      </button>
+      {/* 🔍 Search + Add Button */}
+      <div className="flex justify-between items-center mb-4">
+        <input
+          type="text"
+          placeholder="Search brands..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+        />
+        <button
+          onClick={() => {
+            resetForm();
+            setShowModal(true);
+          }}
+          className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+        >
+          Add Brand
+        </button>
+      </div>
 
       {/* Brands Table */}
-      <div className="overflow-x-auto">
-          <table className="w-full border border-slate-200 rounded-lg">
-  <thead className="bg-slate-50 border-b border-slate-200">
-    <tr>
-      <th className="px-6 py-3 text-left">Sl. No.</th>
-      <th className="px-6 py-3 text-left">Image</th>
-      <th className="px-6 py-3 text-left">Name</th>
-      <th className="px-6 py-3 text-left">Status</th>
-      <th className="px-6 py-3 text-right">Actions</th>
-    </tr>
-  </thead>
-  <tbody className="divide-y divide-slate-200">
-    {paginatedBrands.map((brand, index) => (
-      <tr key={brand._id}>
-        <td className="px-6 py-3">
-          {(currentPage - 1) * itemsPerPage + index + 1}
-        </td>
-        <td className="px-6 py-3">
-          {brand.image && (
-            <img
-              src={`data:image/jpeg;base64,${brand.image}`}
-              alt={brand.name}
-              className="w-12 h-12 object-contain rounded"
-            />
-          )}
-        </td>
-        <td className="px-6 py-3">{brand.name}</td>
-        <td className="px-6 py-3">
-          {brand.status === "blocked" ? "Blocked" : "Active"}
-        </td>
-        <td className="px-6 py-3 text-right flex justify-end gap-3">
-          <button
-            onClick={() => handleEdit(brand)}
-            className="text-indigo-600"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleToggleBlock(brand)}
-            className={
-              brand.status === "blocked"
-                ? "text-green-600"
-                : "text-red-600"
-            }
-          >
-            {brand.status === "blocked" ? "Unblock" : "Block"}
-          </button>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th className="px-6 py-4 text-left">Sl. No.</th>
+              <th className="px-6 py-4 text-left">Image</th>
+              <th className="px-6 py-4 text-left">Name</th>
+              <th className="px-6 py-4 text-left">Status</th>
+              <th className="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {paginatedBrands.map((brand, index) => (
+              <tr key={brand._id}>
+                {/* Serial Number */}
+                <td className="px-6 py-4">
+                  {(currentPage - 1) * itemsPerPage + index + 1}
+                </td>
 
+                {/* Image */}
+                <td className="px-6 py-4">
+                  {brand.image ? (
+                    <img
+                      src={`data:image/jpeg;base64,${brand.image}`}
+                      alt={brand.name}
+                      className="w-12 h-12 object-contain rounded"
+                    />
+                  ) : (
+                    "—"
+                  )}
+                </td>
+
+                {/* Name */}
+                <td className="px-6 py-4">{brand.name}</td>
+
+                {/* Status */}
+                <td className="px-6 py-4">
+                  {brand.status === "blocked" ? "Blocked" : "Active"}
+                </td>
+
+                {/* Actions */}
+                <td className="px-6 py-4 text-right">
+                  <button
+                    onClick={() => handleEdit(brand)}
+                    className="mr-3 text-indigo-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleToggleBlock(brand)}
+                    className={
+                      brand.status === "blocked"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }
+                  >
+                    {brand.status === "blocked" ? "Unblock" : "Block"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Pagination */}
@@ -200,47 +227,62 @@ export default function BrandManagement() {
         <h2 className="text-xl font-semibold mb-4">
           {editingId ? "Edit Brand" : "Add Brand"}
         </h2>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <input
-            type="text"
-            placeholder="Brand name"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="border rounded-lg px-3 py-2"
-            required
-          />
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
-            className="border rounded-lg px-3 py-2"
-          />
-          {/* Preview Image */}
-          {form.image ? (
-            <img
-              src={URL.createObjectURL(form.image)}
-              alt="preview"
-              className="w-20 h-20 object-cover rounded mt-2"
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Brand Name *
+            </label>
+            <input
+              type="text"
+              placeholder="Brand name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2"
+              required
             />
-          ) : existingImage ? (
-            <img
-              src={`data:image/jpeg;base64,${existingImage}`}
-              alt="current"
-              className="w-20 h-20 object-cover rounded mt-2"
-            />
-          ) : null}
+          </div>
 
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Brand Image
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setForm({ ...form, image: e.target.files[0] })}
+              className="w-full border rounded-lg px-3 py-2"
+            />
+
+            {/* Preview */}
+            {form.image ? (
+              <img
+                src={URL.createObjectURL(form.image)}
+                alt="preview"
+                className="w-20 h-20 object-cover rounded mt-2"
+              />
+            ) : existingImage ? (
+              <img
+                src={`data:image/jpeg;base64,${existingImage}`}
+                alt="current"
+                className="w-20 h-20 object-cover rounded mt-2"
+              />
+            ) : null}
+          </div>
+
+          {/* Buttons */}
           <div className="flex gap-3 mt-4">
             <button
               type="submit"
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg"
+              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
-              {editingId ? "Update" : "Add"}
+              {editingId ? "Update Brand" : "Add Brand"}
             </button>
             <button
               type="button"
               onClick={resetForm}
-              className="px-6 py-2 bg-slate-500 text-white rounded-lg"
+              className="px-6 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600"
             >
               Cancel
             </button>
