@@ -175,24 +175,27 @@ export default function ProductListPage({ categoryId, brandId }) {
             />
             <div className="p-4">
               <h1 className="font-semibold text-xl">{product.name}</h1>
-              <p className="text-yellow-600 mt-2 text-xl">
-                {product.offer ? (() => {
-  const discount =
-    product.offer.discountValue !== undefined
-      ? product.offer.discountValue
-      : product.offer.discountPercentage || 0; // fallback 0
-  const finalPrice = (product.price - (discount / 100) * product.price).toFixed(0);
-  return (
-    <>
-      <span className="line-through mr-2">AED {product.price}</span>
-      <span className="text-yellow-600 font-bold">AED {finalPrice}</span>
-    </>
-  );
-})() : (
-  <>AED {product.price}</>
-)}
-
-              </p>
+<p className="text-yellow-600 mt-2 text-xl whitespace-nowrap">
+  {product.offer ? (() => {
+    const discount =
+      product.offer.discountValue !== undefined
+        ? product.offer.discountValue
+        : product.offer.discountPercentage || 0; // fallback 0
+    const finalPrice = (product.price - (discount / 100) * product.price).toFixed(0);
+    return (
+      <>
+        <span className="line-through mr-2 text-gray-500">
+          AED {product.price}
+        </span>
+        <span className="text-yellow-600 font-bold">
+          AED {finalPrice}
+        </span>
+      </>
+    );
+  })() : (
+    <span className="text-yellow-600 font-bold">AED {product.price}</span>
+  )}
+</p>
             </div>
           </div>
         ))}
