@@ -124,53 +124,58 @@ export default function BrandManagement() {
 
       {/* Brands Table */}
       <div className="overflow-x-auto">
-        <table className="w-full border border-slate-200 rounded-lg">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="px-6 py-3 text-left">Image</th>
-              <th className="px-6 py-3 text-left">Name</th>
-              <th className="px-6 py-3 text-left">Status</th>
-              <th className="px-6 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {paginatedBrands.map((brand) => (
-              <tr key={brand._id}>
-                <td className="px-6 py-3">
-                  {brand.image && (
-                    <img
-                      src={`data:image/jpeg;base64,${brand.image}`}
-                      alt={brand.name}
-                      className="w-12 h-12 object-contain rounded"
-                    />
-                  )}
-                </td>
-                <td className="px-6 py-3">{brand.name}</td>
-                <td className="px-6 py-3">
-                  {brand.status === "blocked" ? "Blocked" : "Active"}
-                </td>
-                <td className="px-6 py-3 text-right flex justify-end gap-3">
-                  <button
-                    onClick={() => handleEdit(brand)}
-                    className="text-indigo-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleToggleBlock(brand)}
-                    className={
-                      brand.status === "blocked"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }
-                  >
-                    {brand.status === "blocked" ? "Unblock" : "Block"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          <table className="w-full border border-slate-200 rounded-lg">
+  <thead className="bg-slate-50 border-b border-slate-200">
+    <tr>
+      <th className="px-6 py-3 text-left">Sl. No.</th>
+      <th className="px-6 py-3 text-left">Image</th>
+      <th className="px-6 py-3 text-left">Name</th>
+      <th className="px-6 py-3 text-left">Status</th>
+      <th className="px-6 py-3 text-right">Actions</th>
+    </tr>
+  </thead>
+  <tbody className="divide-y divide-slate-200">
+    {paginatedBrands.map((brand, index) => (
+      <tr key={brand._id}>
+        <td className="px-6 py-3">
+          {(currentPage - 1) * itemsPerPage + index + 1}
+        </td>
+        <td className="px-6 py-3">
+          {brand.image && (
+            <img
+              src={`data:image/jpeg;base64,${brand.image}`}
+              alt={brand.name}
+              className="w-12 h-12 object-contain rounded"
+            />
+          )}
+        </td>
+        <td className="px-6 py-3">{brand.name}</td>
+        <td className="px-6 py-3">
+          {brand.status === "blocked" ? "Blocked" : "Active"}
+        </td>
+        <td className="px-6 py-3 text-right flex justify-end gap-3">
+          <button
+            onClick={() => handleEdit(brand)}
+            className="text-indigo-600"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleToggleBlock(brand)}
+            className={
+              brand.status === "blocked"
+                ? "text-green-600"
+                : "text-red-600"
+            }
+          >
+            {brand.status === "blocked" ? "Unblock" : "Block"}
+          </button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
       </div>
 
       {/* Pagination */}

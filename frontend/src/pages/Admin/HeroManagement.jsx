@@ -118,37 +118,43 @@ export default function HeroImageManagement() {
       {/* Hero Images Table */}
       <div className="overflow-x-auto">
         <table className="w-full border border-slate-200 rounded-lg">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="px-6 py-3 text-left">Image</th>
-              <th className="px-6 py-3 text-left">Status</th>
-              <th className="px-6 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {paginatedImages.map((img) => (
-              <tr key={img._id}>
-                <td className="px-6 py-3">
-                  <img
-                    src={img.imageUrl}
-                    alt="hero"
-                    className="w-32 h-20 object-cover rounded"
-                  />
-                </td>
-                <td className="px-6 py-3">
-                  {img.isActive ? "Active" : "Inactive"}
-                </td>
-                <td className="px-6 py-3 text-right flex justify-end gap-3">
-                  <button
-                    onClick={() => handleToggleActive(img)}
-                    className={img.isActive ? "text-red-600" : "text-green-600"}
-                  >
-                    {img.isActive ? "Deactivate" : "Activate"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+<thead className="bg-slate-50 border-b border-slate-200">
+  <tr>
+    <th className="px-6 py-3 text-left">Sl. No.</th>
+    <th className="px-6 py-3 text-left">Image</th>
+    <th className="px-6 py-3 text-left">Status</th>
+    <th className="px-6 py-3 text-right">Actions</th>
+  </tr>
+</thead>
+<tbody className="divide-y divide-slate-200">
+  {paginatedImages.map((img, index) => (
+    <tr key={img._id}>
+      {/* Serial Number */}
+      <td className="px-6 py-3">
+        {(currentPage - 1) * itemsPerPage + index + 1}
+      </td>
+
+      <td className="px-6 py-3">
+        <img
+          src={img.imageUrl}
+          alt="hero"
+          className="w-32 h-20 object-cover rounded"
+        />
+      </td>
+      <td className="px-6 py-3">
+        {img.isActive ? "Active" : "Inactive"}
+      </td>
+      <td className="px-6 py-3 text-right flex justify-end gap-3">
+        <button
+          onClick={() => handleToggleActive(img)}
+          className={img.isActive ? "text-red-600" : "text-green-600"}
+        >
+          {img.isActive ? "Deactivate" : "Activate"}
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
         </table>
       </div>
 

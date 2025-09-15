@@ -141,48 +141,52 @@ export default function OfferManagement() {
       {/* Offers Table */}
       <div className="overflow-x-auto">
         <table className="w-full border border-slate-200 rounded-lg">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="px-6 py-3 text-left">Title</th>
-              <th className="px-6 py-3 text-left">Discount</th>
-              <th className="px-6 py-3 text-left">Validity</th>
-              <th className="px-6 py-3 text-left">Status</th>
-              <th className="px-6 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {paginatedOffers.map((offer) => (
-              <tr key={offer._id}>
-                <td className="px-6 py-3">{offer.title}</td>
-                <td className="px-6 py-3">
-                  {offer.discountType === "percentage"
-                    ? `${offer.discountValue}%`
-                    : `₹${offer.discountValue}`}
-                </td>
-                <td className="px-6 py-3">
-                  {new Date(offer.startDate).toLocaleDateString()} -{" "}
-                  {new Date(offer.endDate).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-3">
-                  {offer.isActive ? "Active" : "Inactive"}
-                </td>
-                <td className="px-6 py-3 text-right flex justify-end gap-3">
-                  <button
-                    onClick={() => handleEdit(offer)}
-                    className="text-indigo-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleToggleActive(offer)}
-                    className={offer.isActive ? "text-red-600" : "text-green-600"}
-                  >
-                    {offer.isActive ? "Deactivate" : "Activate"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+<thead className="bg-slate-50 border-b border-slate-200">
+  <tr>
+    <th className="px-6 py-3 text-left">Sl. No.</th>
+    <th className="px-6 py-3 text-left">Title</th>
+    <th className="px-6 py-3 text-left">Discount</th>
+    <th className="px-6 py-3 text-left">Validity</th>
+    <th className="px-6 py-3 text-left">Status</th>
+    <th className="px-6 py-3 text-right">Actions</th>
+  </tr>
+</thead>
+<tbody className="divide-y divide-slate-200">
+  {paginatedOffers.map((offer, index) => (
+    <tr key={offer._id}>
+      {/* Serial Number */}
+      <td className="px-6 py-3">
+        {(currentPage - 1) * itemsPerPage + index + 1}
+      </td>
+
+      <td className="px-6 py-3">{offer.title}</td>
+      <td className="px-6 py-3">
+        {offer.discountType === "percentage"
+          ? `${offer.discountValue}%`
+          : `AED ${offer.discountValue}`}
+      </td>
+      <td className="px-6 py-3">
+        {new Date(offer.startDate).toLocaleDateString()} -{" "}
+        {new Date(offer.endDate).toLocaleDateString()}
+      </td>
+      <td className="px-6 py-3">{offer.isActive ? "Active" : "Inactive"}</td>
+      <td className="px-6 py-3 text-right flex justify-end gap-3">
+        <button
+          onClick={() => handleEdit(offer)}
+          className="text-indigo-600"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => handleToggleActive(offer)}
+          className={offer.isActive ? "text-red-600" : "text-green-600"}
+        >
+          {offer.isActive ? "Deactivate" : "Activate"}
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
         </table>
       </div>
 

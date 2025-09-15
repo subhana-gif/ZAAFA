@@ -245,65 +245,70 @@ export default function ProductManagement() {
       {/* Products Table */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="px-6 py-4 text-left">Image</th>
-              <th className="px-6 py-4 text-left">Product</th>
-              <th className="px-6 py-4 text-left">Category</th>
-              <th className="px-6 py-4 text-left">Brand</th>
-              <th className="px-6 py-4 text-left">Offer</th>
-              <th className="px-6 py-4 text-left">Price</th>
-              <th className="px-6 py-4 text-left">Description</th>
-              <th className="px-6 py-4 text-left">Status</th>
-              <th className="px-6 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {paginatedProducts.map((product) => (
-              <tr key={product._id}>
-                <td className="px-6 py-4">
-                  {product.images?.[0] ? (
-                    <img
-                      src={`data:image/jpeg;base64,${product.images[0]}`}
-                      alt={product.name}
-                      className="h-12 w-12 object-cover rounded"
-                    />
-                  ) : (
-                    "—"
-                  )}
-                </td>
-                <td className="px-6 py-4">{product.name}</td>
-                <td className="px-6 py-4">{product.category?.name || "—"}</td>
-                <td className="px-6 py-4">{product.brand?.name || "—"}</td>
-                <td className="px-6 py-4">{product.offer?.title || "—"}</td>
-                <td className="px-6 py-4">AED {product.price.toFixed(2)}</td>
-                <td className="px-6 py-4">{product.description || "—"}</td>
-                <td className="px-6 py-4">
-                  {product.status === "blocked" ? "Blocked" : "Active"}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => handleEdit(product)}
-                    className="mr-3 text-indigo-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleToggleBlock(product._id, product.status === "blocked")
-                    }
-                    className={`${
-                      product.status === "blocked"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {product.status === "blocked" ? "Unblock" : "Block"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+<thead className="bg-slate-50 border-b border-slate-200">
+  <tr>
+    <th className="px-6 py-4 text-left">Sl. No.</th>
+    <th className="px-6 py-4 text-left">Image</th>
+    <th className="px-6 py-4 text-left">Product</th>
+    <th className="px-6 py-4 text-left">Category</th>
+    <th className="px-6 py-4 text-left">Brand</th>
+    <th className="px-6 py-4 text-left">Offer</th>
+    <th className="px-6 py-4 text-left">Price</th>
+    <th className="px-6 py-4 text-left">Description</th>
+    <th className="px-6 py-4 text-left">Status</th>
+    <th className="px-6 py-4 text-right">Actions</th>
+  </tr>
+</thead>
+<tbody className="divide-y divide-slate-200">
+  {paginatedProducts.map((product, index) => (
+    <tr key={product._id}>
+      {/* Serial Number */}
+      <td className="px-6 py-4">
+        {(currentPage - 1) * itemsPerPage + index + 1}
+      </td>
+
+      {/* Existing Columns */}
+      <td className="px-6 py-4">
+        {product.images?.[0] ? (
+          <img
+            src={`data:image/jpeg;base64,${product.images[0]}`}
+            alt={product.name}
+            className="h-12 w-12 object-cover rounded"
+          />
+        ) : (
+          "—"
+        )}
+      </td>
+      <td className="px-6 py-4">{product.name}</td>
+      <td className="px-6 py-4">{product.category?.name || "—"}</td>
+      <td className="px-6 py-4">{product.brand?.name || "—"}</td>
+      <td className="px-6 py-4">{product.offer?.title || "—"}</td>
+      <td className="px-6 py-4">AED {product.price.toFixed(2)}</td>
+      <td className="px-6 py-4">{product.description || "—"}</td>
+      <td className="px-6 py-4">
+        {product.status === "blocked" ? "Blocked" : "Active"}
+      </td>
+      <td className="px-6 py-4 text-right">
+        <button
+          onClick={() => handleEdit(product)}
+          className="mr-3 text-indigo-600"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() =>
+            handleToggleBlock(product._id, product.status === "blocked")
+          }
+          className={`${
+            product.status === "blocked" ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {product.status === "blocked" ? "Unblock" : "Block"}
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
         </table>
       </div>
 

@@ -8,7 +8,7 @@ const API_BASE_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:5000/api"
     : "https://zaafa-backend.onrender.com/api";
-    
+
 export default function ProductDetailPage() {
   const { id } = useParams();
   const location = useLocation();
@@ -206,11 +206,12 @@ export default function ProductDetailPage() {
   >
     {selectedImage ? (
       <img
-        src={getImageUrl(selectedImage)}
-        alt={product.name}
-        className="w-full max-w-full h-[350px] object-contain transition-transform duration-150"
-        style={zoomStyle}
-      />
+  src={getImageUrl(selectedImage)}
+  alt={product.name}
+  className="w-full max-w-full h-auto object-contain transition-transform duration-150"
+  style={zoomStyle}
+/>
+
     ) : (
       <div className="w-full h-[350px] bg-yellow-100 flex items-center justify-center">
         <span className="text-yellow-600 text-6xl font-bold">

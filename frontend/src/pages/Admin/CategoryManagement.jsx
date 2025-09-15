@@ -129,49 +129,55 @@ export default function CategoryManagement() {
       {/* Categories Table */}
       <div className="overflow-x-auto">
         <table className="w-full border border-slate-200 rounded-lg">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="px-6 py-3 text-left">Image</th>
-              <th className="px-6 py-3 text-left">Name</th>
-              <th className="px-6 py-3 text-left">Description</th>
-              <th className="px-6 py-3 text-left">Status</th>
-              <th className="px-6 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {paginatedCategories.map((cat) => (
-              <tr key={cat._id}>
-                <td className="px-6 py-3">
-                  {cat.image && (
-                    <img
-                      src={`data:image/jpeg;base64,${cat.image}`}
-                      alt={cat.name}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                  )}
-                </td>
-                <td className="px-6 py-3">{cat.name}</td>
-                <td className="px-6 py-3">{cat.description || "—"}</td>
-                <td className="px-6 py-3">
-                  {cat.status === "blocked" ? "Blocked" : "Active"}
-                </td>
-                <td className="px-6 py-3 text-right flex justify-end gap-3">
-                  <button
-                    onClick={() => handleEdit(cat)}
-                    className="text-indigo-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleToggleBlock(cat)}
-                    className={cat.status === "blocked" ? "text-green-600" : "text-red-600"}
-                  >
-                    {cat.status === "blocked" ? "Unblock" : "Block"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+<thead className="bg-slate-50 border-b border-slate-200">
+  <tr>
+    <th className="px-6 py-3 text-left">Sl. No.</th>
+    <th className="px-6 py-3 text-left">Image</th>
+    <th className="px-6 py-3 text-left">Name</th>
+    <th className="px-6 py-3 text-left">Description</th>
+    <th className="px-6 py-3 text-left">Status</th>
+    <th className="px-6 py-3 text-right">Actions</th>
+  </tr>
+</thead>
+<tbody className="divide-y divide-slate-200">
+  {paginatedCategories.map((cat, index) => (
+    <tr key={cat._id}>
+      {/* Serial Number */}
+      <td className="px-6 py-3">
+        {(currentPage - 1) * itemsPerPage + index + 1}
+      </td>
+
+      <td className="px-6 py-3">
+        {cat.image && (
+          <img
+            src={`data:image/jpeg;base64,${cat.image}`}
+            alt={cat.name}
+            className="w-12 h-12 object-cover rounded"
+          />
+        )}
+      </td>
+      <td className="px-6 py-3">{cat.name}</td>
+      <td className="px-6 py-3">{cat.description || "—"}</td>
+      <td className="px-6 py-3">
+        {cat.status === "blocked" ? "Blocked" : "Active"}
+      </td>
+      <td className="px-6 py-3 text-right flex justify-end gap-3">
+        <button
+          onClick={() => handleEdit(cat)}
+          className="text-indigo-600"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => handleToggleBlock(cat)}
+          className={cat.status === "blocked" ? "text-green-600" : "text-red-600"}
+        >
+          {cat.status === "blocked" ? "Unblock" : "Block"}
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
         </table>
       </div>
 

@@ -90,7 +90,7 @@ export default function ProductListPage({ categoryId, brandId }) {
         if (selectedBrand && selectedBrand !== "all") params.brand = selectedBrand;
 
         const res = await axios.get(
-          "${API_BASE_URL}/products/user",
+          `${API_BASE_URL}/products/user`,
           { params }
         );
         setProducts(res.data.products || []);
