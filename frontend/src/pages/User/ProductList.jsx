@@ -34,7 +34,7 @@ export default function ProductListPage({ categoryId, brandId }) {
           setCategory(categoryRes.data);
 
           const brandsRes = await axios.get(
-            `https://zaafa-backend.onrender.com/api/brands?category=${categoryId}`
+            `https://zaafa-backend.onrender.com/api/brands/user?category=${categoryId}`
           );
           setBrands(brandsRes.data || []);
         } catch (err) {
@@ -56,7 +56,7 @@ export default function ProductListPage({ categoryId, brandId }) {
           setBrand(brandRes.data);
 
           const categoriesRes = await axios.get(
-            `https://zaafa-backend.onrender.com/api/categories?brand=${brandId}`
+            `https://zaafa-backend.onrender.com/api/categories/user?brand=${brandId}`
           );
           setCategories(categoriesRes.data || []);
         } catch (err) {
