@@ -5,7 +5,7 @@ import { useAlert } from "../../Component/AlertContext";
 
 const PRODUCT_API = "https://zaafa-backend.onrender.com/api/products";
 const CATEGORY_API = "https://zaafa-backend.onrender.com/api/categories";
-const OFFER_API = "https://zaafa-backend.onrender.com/api/offers";
+const OFFER_API = "https://zaafa-backend.onrender.com/api/offers/user";
 const BRAND_API = "https://zaafa-backend.onrender.com/api/brands";
 
 function Modal({ isOpen, onClose, children }) {
