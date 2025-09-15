@@ -250,8 +250,8 @@ export default function HeaderLayout({ children,onCategorySelect  }) {
                 <nav className="px-4 py-4">
                   {categories.map((cat) => (
                     <button
-                      key={cat.id}
-                      onClick={() => handleCategoryClick(cat.id)}
+                      key={cat._id}
+                      onClick={() => handleCategoryClick(cat._id)}
                       className="block w-full text-left py-3 px-2 text-gray-700 hover:text-yellow-600 hover:bg-yellow-50 font-semibold transition-colors text-lg border-b border-gray-100 last:border-b-0"
                     >
                       {cat.name.toUpperCase()}
