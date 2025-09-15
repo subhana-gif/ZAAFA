@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import HeroSlider from "./HeroSlider";
 import BrandCarousel from "./BrandSlider";
 import CategoryCarousel from "./Category";
@@ -6,13 +7,21 @@ import ProductListPage from "./ProductList";
 import Footer from "./footer";
 
 export default function HomePage() {
+  const { categoryId } = useParams(); // ✅ from route
+
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState(null);
 
-  // ✅ Ref for the products section
   const productsRef = useRef(null);
 
-  // ✅ Scroll when brand or category changes
+  // ✅ When URL param changes, set selectedCategory
+  useEffect(() => {
+    if (categoryId) {
+      setSelectedCategory(categoryId);
+      setSelectedBrand(null);
+    }
+  }, [categoryId]);
+
   useEffect(() => {
     if (selectedCategory || selectedBrand) {
       productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -21,7 +30,6 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Hero Section */}
       <HeroSlider />
 
       <main className="flex-grow">
@@ -33,7 +41,7 @@ export default function HomePage() {
           <BrandCarousel
             onBrandSelect={(brandId) => {
               setSelectedBrand(brandId);
-              setSelectedCategory(null); // clear category if brand selected
+              setSelectedCategory(null);
             }}
           />
         </section>
@@ -43,25 +51,17 @@ export default function HomePage() {
           <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
             Shop by Category
           </h2>
-          <CategoryCarousel
-            onCategorySelect={(categoryId) => setSelectedCategory(categoryId)}
-          />
+          <CategoryCarousel onCategorySelect={(id) => setSelectedCategory(id)} />
         </section>
 
         {/* Products Section */}
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-            Shop by Products
-          </h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+          Shop by Products
+        </h2>
 
-        <section
-          className="py-10 bg-white w-full"
-          ref={productsRef} // ✅ attach ref here
-        >
+        <section className="py-10 bg-white w-full" ref={productsRef}>
           {selectedCategory || selectedBrand ? (
-            <ProductListPage
-              categoryId={selectedCategory}
-              brandId={selectedBrand}
-            />
+            <ProductListPage categoryId={selectedCategory} brandId={selectedBrand} />
           ) : (
             <div className="text-center py-16 text-gray-500 text-lg font-medium">
               Select a category or brand to see products
@@ -70,7 +70,6 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Footer */}
       <Footer />
     </div>
   );
