@@ -292,15 +292,27 @@ export default function ProductDetailPage() {
                 </h1>
                 <div className="text-4xl font-bold text-yellow-600 mb-6">
                   {product.offer ? (
-                    <>
-                      <span className="line-through mr-2 text-gray-500">
-                        AED {product.price}
-                      </span>
-                      <span>AED {properPrice.toFixed(0)}</span>
-                    </>
-                  ) : (
-                    <>AED {properPrice.toFixed(0)}</>
-                  )}
+    <>
+      {(() => {
+        const finalPrice = Math.max(
+          product.price -
+            (product.offer.discountType === "percentage"
+              ? (product.offer.discountValue / 100) * product.price
+              : product.offer.discountValue),
+          0
+        ).toFixed(0);
+
+        return (
+          <>
+            <span className="line-through text-gray-500">AED {product.price}</span>
+            <span className="text-yellow-600 font-bold">     AED {finalPrice}</span>
+          </>
+        );
+      })()}
+    </>
+  ) : (
+    <span className="text-yellow-600 font-bold">AED {product.price}</span>
+  )}
                 </div>
               </div>
               {product.category && (
@@ -334,58 +346,56 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Related Products */}
-{relatedProducts.length > 0 && (
-  <div className="mt-16">
-    <h2 className="text-3xl font-bold text-yellow-600 mb-6">
-      Related Products
-    </h2>
+<div className="flex gap-6 overflow-x-auto pb-4 md:grid md:grid-cols-2 lg:grid-cols-4">
+  {relatedProducts.map((p) => {
+    // Calculate final price if offer exists
+    const finalPrice = p.offer
+      ? Math.max(
+          Number(p.price) -
+            (p.offer.discountType === "percentage"
+              ? (Number(p.offer.discountValue) / 100) * Number(p.price)
+              : Number(p.offer.discountValue)),
+          0
+        ).toFixed(0)
+      : Number(p.price).toFixed(0);
 
-    {loadingRelated ? (
-      <div className="flex gap-6 overflow-x-auto pb-4 md:grid md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <div
-            key={i}
-            className="min-w-[220px] bg-white rounded-xl p-6 animate-pulse shadow-md flex-shrink-0"
-          >
-            <div className="w-full h-48 bg-gray-200 rounded-lg mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded"></div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div className="flex gap-6 overflow-x-auto pb-4 md:grid md:grid-cols-2 lg:grid-cols-4">
-        {relatedProducts.map((p) => (
-          <div
-            key={p._id}
-            onClick={() => goToProductDetail(p)}
-            className="min-w-[220px] group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 shadow-md bg-white hover:shadow-lg flex-shrink-0"
-          >
-            <div className="p-4 text-center">
-              {p.images?.[0] ? (
-                <img
-                  src={getImageUrl(p.images[0])}
-                  alt={p.name}
-                  className="w-32 h-32 mx-auto mb-4 rounded-lg object-cover"
-                />
-              ) : (
-                <div className="w-32 h-32 mx-auto mb-4 rounded-lg bg-yellow-200 flex items-center justify-center">
-                  <span className="text-yellow-600 text-2xl font-bold">
-                    {p.name.charAt(0)}
-                  </span>
-                </div>
-              )}
-              <h4 className="text-lg font-semibold text-yellow-600 group-hover:text-yellow-700 transition-colors">
-                {p.name}
-              </h4>
-              <p className="text-sm text-gray-500 mt-1">AED {p.price}</p>
+    return (
+      <div
+        key={p._id}
+        onClick={() => goToProductDetail(p)}
+        className="min-w-[220px] group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 shadow-md bg-white hover:shadow-lg flex-shrink-0"
+      >
+        <div className="p-4 text-center">
+          {p.images?.[0] ? (
+            <img
+              src={getImageUrl(p.images[0])}
+              alt={p.name}
+              className="w-32 h-32 mx-auto mb-4 rounded-lg object-cover"
+            />
+          ) : (
+            <div className="w-32 h-32 mx-auto mb-4 rounded-lg bg-yellow-200 flex items-center justify-center">
+              <span className="text-yellow-600 text-2xl font-bold">
+                {p.name.charAt(0)}
+              </span>
             </div>
-          </div>
-        ))}
+          )}
+          <h4 className="text-lg font-semibold text-yellow-600 group-hover:text-yellow-700 transition-colors">
+            {p.name}
+          </h4>
+          {p.offer ? (
+            <p className="text-sm mt-1">
+              <span className="line-through text-gray-500">AED {p.price}</span>{" "}
+              <span className="text-yellow-600 font-bold">AED {finalPrice}</span>
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500 mt-1">AED {p.price}</p>
+          )}
+        </div>
       </div>
-    )}
-  </div>
-)}
+    );
+  })}
+</div>
+
         </div>
       </section>
       <Footer />
